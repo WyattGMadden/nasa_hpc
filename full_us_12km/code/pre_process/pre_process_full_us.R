@@ -11,7 +11,7 @@ obs$time_id <- as.numeric(as.factor(as.numeric(obs$date)))
 obs$spacetime_id <- as.numeric(substr(obs$date, 6, 7))
 
 
-saveRDS(obs, "../../output/data/obs.rds")
+saveRDS(obs, "../../data/created/obs.rds")
 
 
 #get cv objects
@@ -35,7 +35,7 @@ for (cv_type in cv_types) {
                                   type = type,
                                   coords = obs[, c("x", "y")],
                                   buffer.size = buffer.size)
-    saveRDS(cv_out, paste0("../../output/data/cv_objects/", cv_type, ".rds"))
+    saveRDS(cv_out, paste0("../../data/created/cv_objects/", cv_type, ".rds"))
 
 }
 
@@ -45,7 +45,7 @@ job_params <- expand.grid(matern.nu = matern.nu,
                           cv = cv_types,
                           stringsAsFactors = FALSE)
 
-write.csv(job_params, "../../output/data/job_params.csv", row.names = FALSE)
+write.csv(job_params, "../../data/created/job_params.csv", row.names = FALSE)
 
 
 
