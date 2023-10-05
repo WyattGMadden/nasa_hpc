@@ -6,8 +6,8 @@ full_us_run <- function(matern.nu, cv) {
 #    cv <- "ordinary"
 #    matern.nu <- 1.5
 
-    obs_full_us <- readRDS("../../output/data/obs.rds")
-    cv_object <- readRDS(paste0("../../output/data/cv_objects/", cv, ".rds"))
+    obs_full_us <- readRDS("../../data/created/obs.rds")
+    cv_object <- readRDS(paste0("../../data/created/cv_objects/", cv, ".rds"))
     length(unique(obs_full_us$space_id))
 
     n_iter <- 10000
