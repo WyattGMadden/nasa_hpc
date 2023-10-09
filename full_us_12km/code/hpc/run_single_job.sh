@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=bayesgrmfullus     # create a short name for your job
+#SBATCH --job-name=full_US_     # create a short name for your job
 #SBATCH --nodes=1                  # node count
-#SBATCH --partition=week-long-cpu
+#SBATCH --partition=chang
 #SBATCH --ntasks=1                 # total number of tasks across all nodes
 #SBATCH --cpus-per-task=1          # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --mem=4G                   # total memory per node (4 GB per cpu-core is default)
@@ -10,5 +10,5 @@
 module purge
 module load R
 
-Rscript -e "source('full_data_fit.R'); full_grid_run(matern.nu=as.numeric(Sys.getenv('PARAM1')), cv=Sys.getenv('PARAM2'))"
+Rscript -e "source('full_data_fit.R'); full_us_run(matern.nu=as.numeric(Sys.getenv('PARAM1')), cv=Sys.getenv('PARAM2'))"
 
