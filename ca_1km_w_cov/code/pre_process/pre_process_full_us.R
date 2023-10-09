@@ -1,5 +1,3 @@
-set.seed(1001001)
-
 #get CTM, grid.info, OBS, OBS.info
 #process observations
 load("../../data/howard_uploaded/Grid_PM25.RData")
@@ -47,10 +45,7 @@ job_params <- expand.grid(matern.nu = matern.nu,
                           cv = cv_types,
                           stringsAsFactors = FALSE)
 
-write.csv(job_params, 
-          "../../data/created/job_params.csv", 
-          row.names = FALSE,
-          quote = F)
+write.csv(job_params, "../../data/created/job_params.csv", row.names = FALSE)
 
 
 
