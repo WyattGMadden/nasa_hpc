@@ -14,6 +14,9 @@ full_fit <- function(matern.nu, cv) {
     time_fit <- system.time({
     ctm_fit <- grmbayes::grm(Y = obs$pm25,
                              X = obs$aod.final,
+                             L = obs[, c("elevation", "population")],
+                             M = obs[, c("cloud", "v_wind", "hpbl",
+                                         "u_wind", "short_rf", "humidity_2m")],
                              n.iter = n_iter,
                              burn = burn,
                              thin = thin,
@@ -31,22 +34,25 @@ full_fit <- function(matern.nu, cv) {
     })
     time_fit_cv <- system.time({
     ctm_fit_cv <- grmbayes::grm_cv(Y = obs$pm25,
-                             X = obs$final.aod,
-                             cv.object = cv_object,
-                             n.iter = n_iter,
-                             burn = burn,
-                             thin = thin,
-                             nngp = T,
-                             covariance = "matern",
-                             matern.nu = matern.nu,
-                             discrete.theta.gibbs = F,
-                             discrete.theta.alpha.values = discrete.theta.alpha.values,
-                             discrete.theta.beta.values = discrete.theta.beta.values,
-                             coords = obs[, c("x", "y")],
-                             space.id = obs$space_id,
-                             time.id = obs$time_id,
-                             spacetime.id = obs$spacetime_id,
-                             verbose.iter = 1000)
+                                   L = obs[, c("elevation", "population")],
+                                   M = obs[, c("cloud", "v_wind", "hpbl",
+                                               "u_wind", "short_rf", "humidity_2m")],
+                                   X = obs$final.aod,
+                                   cv.object = cv_object,
+                                   n.iter = n_iter,
+                                   burn = burn,
+                                   thin = thin,
+                                   nngp = T,
+                                   covariance = "matern",
+                                   matern.nu = matern.nu,
+                                   discrete.theta.gibbs = F,
+                                   discrete.theta.alpha.values = discrete.theta.alpha.values,
+                                   discrete.theta.beta.values = discrete.theta.beta.values,
+                                   coords = obs[, c("x", "y")],
+                                   space.id = obs$space_id,
+                                   time.id = obs$time_id,
+                                   spacetime.id = obs$spacetime_id,
+                                   verbose.iter = 1000)
     })
 
 
