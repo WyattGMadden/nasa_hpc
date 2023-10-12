@@ -73,7 +73,7 @@ job_params <- expand.grid(matern.nu = matern.nu,
                           cv = cv_types,
                           stringsAsFactors = FALSE)
 
-write.csv(job_params, "../../data/created/job_params.csv", row.names = FALSE)
+write.csv(job_params, "../../data/created/job_params.csv", row.names = FALSE, quote = FALSE)
 
 
 

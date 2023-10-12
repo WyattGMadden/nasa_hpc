@@ -1,12 +1,6 @@
 full_fit <- function(matern.nu, cv) {
-    #temp
-#    n_iter <- 100
-#    burn <- 10
-#    thin <- 4
-#    cv <- "ordinary"
-#    matern.nu <- 1.5
 
-    obs_full_us <- readRDS("../../data/created/obs.rds")
+    obs <- readRDS("../../data/created/obs.rds")
     cv_object <- readRDS(paste0("../../data/created/cv_objects/", cv, ".rds"))
 
     n_iter <- 10000
@@ -16,15 +10,10 @@ full_fit <- function(matern.nu, cv) {
 
     discrete.theta.alpha.values <- seq(50, 250, 25)       
     discrete.theta.beta.values <- seq(50, 250, 25)       
-#    if (matern.nu %in% c(1.5, 2.5)) {
-#        matern_scale = 0.1
-#        discrete.theta.alpha.values <- discrete.theta.alpha.values * matern_scale
-#        discrete.theta.beta.values <- discrete.theta.beta.values * matern_scale
-#    }
 
     time_fit <- system.time({
-    ctm_fit <- grmbayes::grm(Y = obs_full_us$pm_aqs,
-                             X = obs_full_us$pm25_tot_ncar,
+    ctm_fit <- grmbayes::grm(Y = obs$pm25,
+                             X = obs$aod.final,
                              n.iter = n_iter,
                              burn = burn,
                              thin = thin,
@@ -34,15 +23,15 @@ full_fit <- function(matern.nu, cv) {
                              discrete.theta.gibbs = F,
                              discrete.theta.alpha.values = discrete.theta.alpha.values,
                              discrete.theta.beta.values = discrete.theta.beta.values,
-                             coords = obs_full_us[, c("x", "y")],
-                             space.id = obs_full_us$space_id,
-                             time.id = obs_full_us$time_id,
-                             spacetime.id = obs_full_us$spacetime_id,
+                             coords = obs[, c("x", "y")],
+                             space.id = obs$space_id,
+                             time.id = obs$time_id,
+                             spacetime.id = obs$spacetime_id,
                              verbose.iter = 1000)
     })
     time_fit_cv <- system.time({
-    ctm_fit_cv <- grmbayes::grm_cv(Y = obs_full_us$pm_aqs,
-                             X = obs_full_us$pm25_tot_ncar,
+    ctm_fit_cv <- grmbayes::grm_cv(Y = obs$pm25,
+                             X = obs$final.aod,
                              cv.object = cv_object,
                              n.iter = n_iter,
                              burn = burn,
@@ -53,10 +42,10 @@ full_fit <- function(matern.nu, cv) {
                              discrete.theta.gibbs = F,
                              discrete.theta.alpha.values = discrete.theta.alpha.values,
                              discrete.theta.beta.values = discrete.theta.beta.values,
-                             coords = obs_full_us[, c("x", "y")],
-                             space.id = obs_full_us$space_id,
-                             time.id = obs_full_us$time_id,
-                             spacetime.id = obs_full_us$spacetime_id,
+                             coords = obs[, c("x", "y")],
+                             space.id = obs$space_id,
+                             time.id = obs$time_id,
+                             spacetime.id = obs$spacetime_id,
                              verbose.iter = 1000)
     })
 
