@@ -1,4 +1,4 @@
-full_run <- function(matern.nu, cv) {
+full_fit <- function(matern.nu, cv) {
     #temp
 #    n_iter <- 100
 #    burn <- 10
@@ -8,7 +8,6 @@ full_run <- function(matern.nu, cv) {
 
     obs_full_us <- readRDS("../../data/created/obs.rds")
     cv_object <- readRDS(paste0("../../data/created/cv_objects/", cv, ".rds"))
-    length(unique(obs_full_us$space_id))
 
     n_iter <- 10000
     burn <- 2000

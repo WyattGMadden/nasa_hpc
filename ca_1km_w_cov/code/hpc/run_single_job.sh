@@ -1,5 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name=$(Rscript -e 'cat(paste0("CA_",Sys.getenv("PARAM1"), "_", Sys.getenv("PARAM2")))')     # create a short name for your job
+
+#SBATCH --job-name=_<oCAo>_
 #SBATCH --nodes=1                  # node count
 #SBATCH --partition=chang
 #SBATCH --ntasks=1                 # total number of tasks across all nodes

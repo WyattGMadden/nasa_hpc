@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=full_US_     # create a short name for your job
+#SBATCH --job-name=_oOUSOo_     # create a short name for your job
 #SBATCH --nodes=1                  # node count
 #SBATCH --partition=chang
 #SBATCH --ntasks=1                 # total number of tasks across all nodes
