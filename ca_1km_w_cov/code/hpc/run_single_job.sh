@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #SBATCH --job-name=_<oCAo>_
 #SBATCH --nodes=1                  # node count
 #SBATCH --partition=chang
@@ -11,5 +10,5 @@
 module purge
 module load R
 
-Rscript -e "source('full_fit.R'); full_run(matern.nu=as.numeric(Sys.getenv('PARAM1')), cv=Sys.getenv('PARAM2'))"
+Rscript -e "source('full_fit.R'); full_fit(matern.nu=as.numeric(Sys.getenv('PARAM1')), cv=Sys.getenv('PARAM2'))"
 
