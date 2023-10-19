@@ -37,7 +37,7 @@ full_fit <- function(matern.nu, cv) {
                                    L = obs[, c("elevation", "population")],
                                    M = obs[, c("cloud", "v_wind", "hpbl",
                                                "u_wind", "short_rf", "humidity_2m")],
-                                   X = obs$final.aod,
+                                   X = obs$aod.final,
                                    cv.object = cv_object,
                                    n.iter = n_iter,
                                    burn = burn,
