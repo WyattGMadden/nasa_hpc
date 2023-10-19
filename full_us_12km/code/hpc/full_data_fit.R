@@ -69,7 +69,7 @@ full_us_run <- function(matern.nu, cv) {
                    time_fit = time_fit,
                    time_fit_cv = time_fit_cv)
     saveRDS(output, 
-            paste0("../output/results/full_us_fit_",
+            paste0("../../output/results/full_us_fit_",
                    matern.nu,
                    "_", 
                    cv, 
