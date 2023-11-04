@@ -16,12 +16,41 @@ obs$spacetime_id <- as.numeric(substr(obs$date, 6, 7))
 saveRDS(obs, "../../data/created/obs.rds")
 
 
+
+#cv objects
+#read prelim results for correlated calculation for spatial buffering
+fit_mat <- readRDS("../../data/created/prelim_fits.rds")
+
+
+
+others_out <- lapply(fit_mat,
+                 function(x) {
+                     fit <- x$others
+                     fit$matern_nu <- x$matern.nu
+                     fit$iter <- 1:nrow(fit)
+                     return(fit)
+                    }
+                 ) |>
+    (\(.) Reduce(rbind, .))()
+
+###output correlation###
+#based on max(theta_alpha, theta_beta), nu = 0.5
+#correlation of 0.7 and 0.3
+
+mean_theta_alpha <- mean(others_out$theta.alpha[others_out$matern_nu == 0.5])
+mean_theta_beta <- mean(others_out$theta.beta[others_out$matern_nu == 0.5])
+mean_theta <- max(c(mean_theta_alpha, mean_theta_beta))
+
+buffer_0.8 <- - mean_theta * log(0.7)
+buffer_0.5 <- - mean_theta * log(0.3)
+
+
 #get cv objects
 cv_types <- c("ordinary", 
               "spatial", 
               "spatial_clustered", 
-              "spatial_buffered_35",
-              "spatial_buffered_100")
+              paste0("spatial_buffered_", round(buffer_0.8, 2)),
+              paste0("spatial_buffered_", round(buffer_0.5, 2)))
 
 for (cv_type in cv_types) {
 
