@@ -1,4 +1,6 @@
 full_us_run <- function(matern.nu, cv) {
+	print(matern.nu)
+	print(cv)
 
     obs_full_us <- readRDS("../../data/created/obs.rds")
     cv_object <- readRDS(paste0("../../data/created/cv_objects/", cv, ".rds"))
