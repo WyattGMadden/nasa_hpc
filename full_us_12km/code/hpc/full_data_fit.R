@@ -10,8 +10,8 @@ full_us_run <- function(matern.nu, cv) {
     thin <- 4
 
 
-    discrete.theta.alpha.values <- seq(0.1, 1, 0.025)       
-    discrete.theta.beta.values <- seq(0.1, 1, 0.025)       
+    discrete.theta.alpha.values <- seq(0.1, 1, 0.1)
+    discrete.theta.beta.values <- seq(0.1, 1, 0.1)
     theta_ab <- 0.05
     theta_init <- 0.5
     if (matern.nu == 0.5) {
