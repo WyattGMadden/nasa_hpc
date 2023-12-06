@@ -1,18 +1,16 @@
-full_preds <- function() {
+us_preds <- function() {
 
     #best rmse matern.nu
-    fit <- readRDS("../../output/results/fits/fit_0.5_ordinary.RDS")$ctm_fit
+    fit <- readRDS("../../output/results/fits/full_us_fit_0.5_ordinary.RDS")$ctm_fit
 
     obs <- readRDS("../../data/created/obs.rds")
     pred_dat <- readRDS("../../data/created/preds.rds")
+    names(pred_dat)
 
 
 
     preds <- grmbayes::grm_pred(grm.fit = fit,
-                                X.pred = pred_dat$aod.final,
-                                L = obs[, c("elevation", "population")],
-                                M = obs[, c("cloud", "v_wind", "hpbl",
-                                            "u_wind", "short_rf", "humidity_2m")],
+                                X.pred = pred_dat$pm25_tot_ncar,
                                 coords.Y = obs[, c("x", "y")],
                                 space.id.Y = obs$space_id,
                                 coords.pred = pred_dat[, c("x", "y")],
