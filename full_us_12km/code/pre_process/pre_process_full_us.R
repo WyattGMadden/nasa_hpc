@@ -16,6 +16,29 @@ obs$spacetime_id <- as.numeric(substr(obs$date, 6, 7))
 saveRDS(obs, "../../data/created/obs.rds")
 
 
+#process preds
+
+grid.info <- grid.info
+names(grid.info) <- tolower(names(grid.info))
+grid.info <- grid.info[, c("grid_cell", "x", "y")]
+
+preds <- CTM
+names(preds) <- tolower(names(preds))
+
+preds$date <- as.Date(preds$date)
+preds$space_id <- preds$grid_cell
+preds$time_id <- as.numeric(as.factor(as.numeric(preds$date)))
+preds$spacetime_id <- as.numeric(substr(preds$date, 6, 7))
+
+#left join grid.info on preds
+preds <- merge(preds, 
+               grid.info, 
+               by = "grid_cell",
+               all.x = TRUE)
+
+saveRDS(preds, "../../data/created/preds.rds")
+
+
 
 #cv objects
 #read prelim results for correlated calculation for spatial buffering
