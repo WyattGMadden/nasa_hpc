@@ -26,4 +26,5 @@ full_preds <- function() {
 
     saveRDS(preds,
             "../../output/results/preds/preds.RDS")
+    warnings()
 }
