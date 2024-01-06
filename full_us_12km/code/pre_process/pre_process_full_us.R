@@ -26,8 +26,10 @@ preds <- CTM
 names(preds) <- tolower(names(preds))
 
 preds$date <- as.Date(preds$date)
+preds <- preds[preds$date %in% obs$date, ]
 preds$space_id <- preds$grid_cell
-preds$time_id <- as.numeric(as.factor(as.numeric(preds$date)))
+preds$time_id <- as.numeric(factor(as.numeric(preds$date),
+                                   levels = levels(as.factor(as.numeric(obs$date)))))
 preds$spacetime_id <- as.numeric(substr(preds$date, 6, 7))
 
 #left join grid.info on preds

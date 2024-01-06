@@ -21,8 +21,9 @@ preds <- merge(preds,
                by.y = "maiac_id", 
                all.x = TRUE)
 
-
-output <- lapply(list.files("../../output/results/", full.names = T), readRDS)
+output_files <- list.files("../../output/results/fits/", full.names = T)
+output_files <- output_files[grepl(".RDS", output_files)]
+output <- lapply(output_files, readRDS)
 
 cv_details <- readRDS("../../data/created/cv_objects/spatial.rds")
 table(cv_details$cv.id)
@@ -81,7 +82,8 @@ hist(test$estimate)
 test$estimate
 
 test |>
-    ggplot(aes(x = estimate, y = obs)) +
+    mutate(model = paste0(cv_type_spec, " - ", matern_nu)) |>
+    ggplot(aes(x = estimate, y = obs, color = model)) +
     geom_point(alpha = 0.1) +
     geom_abline(slope = 1, intercept = 0) +
     labs(x = "Prediction", 
@@ -130,19 +132,23 @@ cv_out |>
     rename_at(vars(`1`:`12`), ~ month.abb) |>
     write.csv(paste0(save_dir, "cv_rmse_month.csv"), row.names = F)
 
-#cv RMSE by monmth
 cv_out |>
+    mutate(cover = obs > lower_95 & obs < upper_95) |>
     mutate(month = as.numeric(format(date, "%m"))) |>
-    group_by(nngp, discrete_theta, month) |>
-    summarise(rmse = sqrt(mean((estimate - obs)^2)), 
-              time = unique(time_fit_cv)) |>
+    group_by(matern_nu, cv_type_spec,  month) |>
+    summarise(rmse = sqrt(mean((estimate - obs)^2))) |>
+#              coverage = mean(cover),
+#              mean_sd = mean(sd),
+#              time = unique(time_fit_cv)) |>
+    ungroup() |>
     pivot_wider(names_from = month, values_from = rmse) |>
-    rename(NNGP = nngp,
-           `Theta Discretization` = discrete_theta,
-           `Time (hours)` = time) |>
+    rename(`Matern Nu` = matern_nu,
+           `CV Type` = cv_type_spec) |>
+#           `Time (hours)` = time) |>
     rename_at(vars(`1`:`12`), ~ month.abb) |>
-    write.csv(paste0(save_dir, "cv_rmse_month.csv"), row.names = F)
-    write_table("cv_rmse_month.md")
+    kable() |>
+    writeLines(paste0(save_dir, "cv_rmse_by_month.tex"))
+
 
 
 #cv prediction one day in october
@@ -337,6 +343,95 @@ others_out |>
 ggsave(paste0(save_dir, "time_fit.png"), width = 8, height = 4)
 
 
+temp <- output[[1]]
+temp$matern.nu
+temp$cv
+
+temp$ctm_fit$alpha.time %>%
+    pivot_longer(2:ncol(.), 
+                 names_to = 'sample', 
+                 values_to = 'value') |>
+    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
+    ggplot(aes(x = sample, y = value, group = time.id)) + 
+    geom_line(alpha = 0.1)
+
+temp$ctm_fit$alpha.time %>%
+    pivot_longer(2:ncol(.), 
+                 names_to = 'sample', 
+                 values_to = 'value') |>
+    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
+    group_by(time.id) |>
+    summarize(post_mean = mean(value)) |>
+    ggplot(aes(x = time.id, y = post_mean)) +
+    geom_point()
+
+temp$ctm_fit$alpha.time %>%
+    pivot_longer(2:ncol(.), 
+                 names_to = 'sample', 
+                 values_to = 'value') |>
+    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
+    group_by(time.id) |>
+    summarize(post_mean = mean(value)) |>
+    pull(post_mean) |>
+    acf()
+
+temp$ctm_fit$beta.time %>%
+    pivot_longer(2:ncol(.), 
+                 names_to = 'sample', 
+                 values_to = 'value') |>
+    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
+    ggplot(aes(x = sample, y = value, group = time.id)) + 
+    geom_line(alpha = 0.1)
+
+temp$ctm_fit$beta.time %>%
+    pivot_longer(2:ncol(.), 
+                 names_to = 'sample', 
+                 values_to = 'value') |>
+    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
+    group_by(time.id) |>
+    summarize(post_mean = mean(value)) |>
+    ggplot(aes(x = time.id, y = post_mean)) +
+    geom_point()
+
+temp$ctm_fit$beta.time %>%
+    pivot_longer(2:ncol(.), 
+                 names_to = 'sample', 
+                 values_to = 'value') |>
+    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
+    group_by(time.id) |>
+    summarize(post_mean = mean(value)) |>
+    pull(post_mean) |>
+    acf()
+
+
+temp_alpha_time <- temp$ctm_fit$alpha.time %>%
+    pivot_longer(2:ncol(.), 
+                 names_to = 'sample', 
+                 values_to = 'value') |>
+    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
+    filter(time.id == 20)
+
+temp_alpha_space <- temp$ctm_fit$alpha.space %>%
+    pivot_longer(3:ncol(.), 
+                 names_to = 'sample', 
+                 values_to = 'value') |>
+    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
+    filter(space.id == 20)
+
+temp_alpha0 <- tibble(value = temp$ctm_fit$others$alpha0) |>
+    mutate(sample = 1:length(value)) 
+
+
+plot(temp_alpha_time$value + temp_alpha_space$value + temp_alpha0$value, type = 'l')
+    
+temp_alpha_0 <- temp$ctm_fit$alpha.0 %>%
+    pivot_longer(2:ncol(.), 
+                 names_to = 'sample', 
+                 values_to = 'value') |>
+    mutate(sample = as.integer(substr(sample, 7, nchar(sample))))
+
+
+
 
 ########################################################
 #####################plots and tables###################
@@ -399,6 +494,7 @@ ggsave(paste0(save_dir, "obs_map_20181008.png"), width = 5, height = 8)
 # Plot estimates
 cv_out |>
   filter(date == '2018-10-08') |>
+  filter(matern_nu != 0.5) |>
   ggplot() +
    geom_polygon(data = ca_map, 
                 aes(x = long, 
@@ -502,7 +598,9 @@ tibble(km = seq(1, 500, 1)) |>
 ggsave(paste0(save_dir, "corr_by_dist.png"), width = 8, height = 4)
 
 round(mean(corr_by_dist_inv(0.8, med_theta_alpha), corr_by_dist_inv(0.8, med_theta_beta)))
+round(mean(corr_by_dist_inv(0.7, med_theta_alpha)))
 round(mean(corr_by_dist_inv(0.5, med_theta_alpha), corr_by_dist_inv(0.5, med_theta_beta)))
+round(mean(corr_by_dist_inv(0.3, med_theta_alpha)))
 corr_by_dist_inv(0.5, med_theta_alpha)
 corr_by_dist_inv(0.5, med_theta_beta)
 
@@ -513,57 +611,118 @@ corr_by_dist_inv(0.5, med_theta_beta)
 ########################################################
 
 
-load("../../data/Grid_PM25.RData")
 library(grmbayes)
 library(tidyverse)
 
-obs <- OBS |> 
-    rename_all(tolower)
+preds_est <- readRDS("../../output/results/preds/preds.RDS")
 
-grid.info <- grid.info |> 
-    rename_all(tolower)
-
-ctm <- CTM |> 
-    rename_all(tolower) |> 
-    left_join(grid.info,
-              by = "grid_cell")
-ctm$time_id <- as.integer(factor(ctm$date))
-ctm$spacetime_id <- rep(1, nrow(ctm))
-grid.info
-table(ctm$date)
+preds <- readRDS("../../data/created/preds.rds")
+preds <- merge(preds, 
+               locs[, c("longitude", "latitude", "maiac_id")],
+               by.x = "maiac_id", 
+               by.y = "maiac_id", 
+               all.x = TRUE)
+preds$estimate <- preds_est$estimate
+preds$sd <- preds_est$sd
 
 
-ctm_fit <- readRDS("../../hpc/output/data/full_grid/full_grid_0.5_ord.RDS")
-ctm_fit <- ctm_fit$ctm_fit
-
-#ctm_pred <- grm_pred(grm.fit = ctm_fit,
-#                     X.pred = ctm$pm25_tot_ncar,
-#                     coords.Y = obs[, c("x", "y")],
-#                     space.id.Y = obs$aqs_site_id,
-#                     coords.pred = ctm[, c("x", "y")],
-#                     space.id = ctm$grid_cell,
-#                     time.id = ctm$time_id,
-#                     spacetime.id = ctm$spacetime_id,
-#                     include.additive.annual.resid = T,
-#                     include.multiplicative.annual.resid = T,
-#                     n.iter = 1000,
-#                     verbose = T)
-ctm_pred <- readRDS("../../output/data/grid_data_full_grid_pred_0.5.RDS")
-
-ctm_pred$date <- ctm$date
-ctm_pred$lat <- ctm$grid_lat.y
-ctm_pred$lon <- ctm$grid_lon.y
-    
 
 
-ctm_pred |>
-  filter(date == '2018-10-08') |>
+
+preds_tmp <- preds |>
+    filter(date == '2018-07-08',
+           x > -10950000,
+           x < -10850000,
+           y > 3750000,
+           y < 3850000) 
+
+cov_names <- c("elevation", "population",
+               "cloud", "v_wind",
+               "hpbl", "u_wind",
+               "short_rf", "humidity_2m",
+               "estimate")
+
+for (cov in cov_names) {
+
+    p_temp <- preds_tmp |>
+      ggplot() +
+      geom_point(aes(x = x, 
+                     y = y,
+                     color = get(cov)),
+                 shape = 15,
+                 size = 1) +
+      scale_colour_viridis_c(
+        guide = guide_colorbar(
+          barwidth = 0.5, 
+          barheight = 4,
+          title.theme = element_text(size = 8),
+          label.theme = element_text(size = 6)
+        )) +
+      labs(x = "Longitude", 
+           y = "Latitude", 
+           color = cov) +
+      theme_bw() +
+      theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = c(1, 0.5), 
+        legend.justification = c(1, 0),
+        legend.background = element_rect(fill = "transparent", color = "black"),
+        legend.key.size = unit(0.8, "cm")
+      )
+    ggsave(paste0(save_dir, "cov_", cov, "_20180708.png"),
+           p_temp,
+           dpi = 400,
+           width = 5, 
+           height = 5)
+
+}
+
+test <- cmaq_pred |>
+    count(time.id, space.id, spacetime.id) |>
+    filter(n > 1)
+
+test <- cmaq_full |>
+    count(time_id, space_id, spacetime_id) |>
+    filter(n > 1)
+unique(test$time_id)
+
+cmaq_full |>
+    distinct(x, y, space_id) |>
+    count(space_id) |>
+    filter(n > 1)
+cmaq_pred$x <- cmaq_full$x
+cmaq_pred$y <- cmaq_full$y
+cmaq_pred
+
+sum(cmaq_pred$space.id != cmaq_full$space_id)
+sum(cmaq_pred$time.id != cmaq_full$time_id)
+sum(cmaq_pred$spacetime.id != cmaq_full$spacetime_id)
+
+cmaq_pred_locs <- cmaq_pred |>
+    left_join(cmaq_full,
+              by = c("space.id" = "space_id",
+                     "time.id" = "time_id",
+                     "spacetime.id" = "spacetime_id"))
+
+unique(cmaq_pred_locs$time.id)
+unique(cmaq_pred_locs$spacetime.id)
+ cmaq_pred |>
+  filter(time.id == 76) |>
+  filter(space.id == 10) |>
   ggplot() +
-  geom_point(aes(x = lon, 
-                 y = lat, 
-                 color = estimate),
+  geom_point(aes(x = x, 
+                 y = y,
+                 color = alpha_time),
              shape = 15,
-             size = 0.8) +
+             size = 5, alpha = 0.5) +
+#  geom_point(data = obs |>
+#               filter(date == '2018-07-08'),
+#             aes(x = longitude, 
+#                 y = latitude,
+#                 color = log(pm25)),
+#             shape = 15,
+#             size = 10) +
   scale_colour_viridis_c(
     guide = guide_colorbar(
       barwidth = 0.5, 
@@ -584,7 +743,62 @@ ctm_pred |>
     legend.key.size = unit(0.8, "cm")
   )
 
-ggsave(paste0(save_dir, "pred_map_20181008.png"), width = 8, height = 5)
+
+preds |>
+    pull(time_id) |>
+    unique()
+
+pred_map_20180708 <- preds |>
+  filter(date == '2018-07-28') |>
+  ggplot() +
+  geom_point(aes(x = longitude, 
+                 y = latitude,
+                 color = log(estimate)),
+             shape = 15,
+             size = 0.005) +
+#  geom_point(data = obs |>
+#               filter(date == '2018-07-08'),
+#             aes(x = longitude, 
+#                 y = latitude,
+#                 color = log(pm25)),
+#             shape = 15,
+#             size = 10) +
+  scale_colour_viridis_c(
+    guide = guide_colorbar(
+      barwidth = 0.5, 
+      barheight = 4,
+      title.theme = element_text(size = 8),
+      label.theme = element_text(size = 6)
+    )) +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       color = "PM2.5 (ug/m^3)") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(1, 0.5), 
+    legend.justification = c(1, 0),
+    legend.background = element_rect(fill = "transparent", color = "black"),
+    legend.key.size = unit(0.8, "cm")
+  )
+
+ggsave(paste0(save_dir, "pred_map_20180728.png"), 
+       pred_map_20180708,
+       dpi = 1600,
+       width = 10, 
+       height = 16)
+
+table(obs$date)
+obs
+
+preds |>
+    filter(date %in% c('2018-07-08', '2018-07-28')) |>
+    filter(space_id == 5000) |>
+    select(estimate)
+
+           
+
 
 ctm |>
   filter(date == '2018-10-08') |>
@@ -619,7 +833,7 @@ ggsave(paste0(save_dir, "ctm_map_20181008.png"), width = 8, height = 5)
 
 sum(is.na(ctm_pred$estimate))
 #posterior means by season map
-ctm_pred |>
+preds |>
   mutate(month = as.numeric(format(date, "%m")),
          month = month.abb[month],
          month = factor(month, levels = month.abb),
@@ -627,11 +841,11 @@ ctm_pred |>
                             month %in% month.abb[4:6] ~ "Apr - Jun",
                             month %in% month.abb[7:9] ~ "Jul - Sep",
                             month %in% month.abb[10:12] ~ "Oct - Dec")) |>
-  group_by(season, space.id, spacetime.id, lat, lon) |>
+  group_by(season, space_id, spacetime_id, latitude, longitude) |>
   summarize(estimate = mean(estimate, na.rm = T)) |>
   ggplot() +
-  geom_point(aes(x = lon, 
-                 y = lat, 
+  geom_point(aes(x = longitude, 
+                 y = latitude, 
                  color = estimate),
              shape = 15,
              size = 0.8) +
@@ -657,4 +871,74 @@ ctm_pred |>
   )
 
 ggsave(paste0(save_dir, "pred_map_season.png"), width = 8, height = 5)
+
+
+
+
+
+
+
+########################################################
+############# within-sample preds ######################
+########################################################
+
+ctm_pred_within_sample <- readRDS("../../output/results/within_sample_preds/preds_0.5_ordinary_within_sample.RDS")
+obs
+ctm_pred_ws <- merge(ctm_pred_within_sample, 
+                obs[, c("pm25", "longitude", "latitude", "space_id", "time_id")],
+                by.x = c("space.id", "time.id"),
+                by.y = c("space_id", "time_id"),
+                all.x = TRUE) 
+
+ctm_pred_ws |>
+    ggplot(aes(x = estimate, y = pm25)) +
+    geom_point(alpha = 0.1) +
+    geom_abline(slope = 1, intercept = 0) +
+    labs(x = "Prediction", 
+         y = "Observation", 
+         title = "Prediction vs. Observation",
+         subtitle = "Ordinary Cross Validation, Matern Nu = 0.5")
+
+#rmse
+ctm_pred_ws |>
+    mutate(mse = (estimate - pm25)^2) |>
+    summarize(mse = mean(mse, na.rm = T)) |>
+    pull(mse) |>
+    sqrt()
+
+
+library(glmnet)
+X <- as.matrix(obs[, c("elevation", "population",
+                       "cloud", "v_wind", "hpbl",
+                       "u_wind", "short_rf", "humidity_2m",
+                       "time_id", "space_id")])
+X <- as.matrix(obs[, c("elevation", "population",
+                       "cloud", "v_wind", "hpbl",
+                       "u_wind", "short_rf", "humidity_2m")])
+y <- obs$pm25
+
+
+
+# Fit elastic net model
+# alpha is the mixing parameter (0 <= alpha <= 1)
+# lambda is the regularization parameter
+set.seed(123)  
+cv_fit <- cv.glmnet(X, y, alpha = 0.5, type.measure = "mse")
+best_lambda <- cv_fit$lambda.min
+predictions <- predict(cv_fit, 
+                       newx = X, 
+                       s = best_lambda)
+#rmse
+sqrt(mean((predictions - y)^2))
+
+sd(y)
+
+pred_compare <- 
+
+
+
+
+
+
+
 

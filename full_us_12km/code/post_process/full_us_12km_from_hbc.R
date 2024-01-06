@@ -14,6 +14,8 @@ kable <- function(x, digits = 2, ...) {
                  ...)
 }
 
+save_dir <- "../../output/figures/"
+
 
 #read in RData file
 load("../../data/howard_uploaded/Grid_PM25.RData")
@@ -28,7 +30,7 @@ obs <- merge(obs,
              by.y = "grid_cell", 
              all.x = TRUE)
 #get distance matrix
-temp <- obs[, c("x", "y")] |> distinct() |>dist()
+temp <- obs[, c("x", "y")] |> distinct() |> dist()
 summary(temp)
 
 obs |>
@@ -40,14 +42,38 @@ obs |>
 
 
 
+my_func <- function(x) {
+                     print(paste0("reading in ", x))
 
-output <- lapply(list.files("../../output/results/", full.names = T), readRDS)
+                     return(readRDS(x))
+                 }
+
+safe_function <- function(x) {
+  tryCatch(
+    {
+        # Try to run the function
+        my_func(x)
+    },
+    error = function(e) {
+      # Handle the error
+      # You can return a specific value or error message
+    print(paste0("error reading in ", x))
+      return(NA)  # For example, return NA on error
+    }
+  )
+}
 
 
+output_temp <- lapply(list.files("../../output/results/fits/", full.names = T), 
+                      safe_function)
+length(output_temp)
 
-sd(obs$pm25)
-summary(obs$pm25)
-summary(cv_out$estimate)
+which_nna <- list.files("../../output/results/fits", full.names = T) != "../../output/results/fits/full_us_fit_1.5_spatial_buffered_5.69.RDS"
+output <- output_temp[which_nna]
+
+
+temp <- output[[1]]
+names(temp)
 
 cv_out <- lapply(output, 
                  function(x) {
@@ -87,14 +113,17 @@ test <- cv_out |>
 
 
 
-test |>
+obs_over_preds <- cv_out |>
     ggplot(aes(x = estimate, y = obs)) +
-    geom_point(alpha = 0.1) +
+    geom_point(alpha = 0.05) +
+    geom_smooth(method = 'lm') +
     geom_abline(slope = 1, intercept = 0) +
+    facet_grid(matern_nu ~ cv_type_spec) +
     labs(x = "Prediction", 
          y = "Observation", 
          title = "Prediction vs. Observation",
          subtitle = "Ordinary Cross Validation, Matern Nu = 0.5")
+ggsave(paste0(save_dir, "obs_over_preds.png"), width = 8, height = 5)
 
 hist(((test$estimate - test$obs)^2))
 summary(test$estimate)
@@ -119,36 +148,20 @@ cv_out |>
     writeLines(paste0(save_dir, "cv_rmse.tex"))
 
 sd(obs$pm_aqs)
+
 #cv RMSE by monmth
 cv_out |>
     mutate(cover = obs > lower_95 & obs < upper_95) |>
     mutate(month = as.numeric(format(date, "%m"))) |>
     group_by(matern_nu, cv_type_spec,  month) |>
-    summarise(rmse = sqrt(mean((estimate - obs)^2)),
-              coverage = mean(cover),
-              mean_sd = mean(sd),
-              time = unique(time_fit_cv)) |>
-    filter(cv_type_spec == "Ordinary")
+    summarise(rmse = sqrt(mean((estimate - obs)^2))) |>
     pivot_wider(names_from = month, values_from = rmse) |>
-    rename(NNGP = nngp,
-           `Theta Discretization` = discrete_theta,
-           `Time (hours)` = time) |>
+    rename(`Cross Validation Type` = cv_type_spec,
+           `Matern Nu Parameter` = matern_nu,
+           RMSE = rmse) |>
     rename_at(vars(`1`:`12`), ~ month.abb) |>
     write.csv(paste0(save_dir, "cv_rmse_month.csv"), row.names = F)
-    write_table("cv_rmse_month.md")
-#cv RMSE by monmth
-cv_out |>
-    mutate(month = as.numeric(format(date, "%m"))) |>
-    group_by(nngp, discrete_theta, month) |>
-    summarise(rmse = sqrt(mean((estimate - obs)^2)), 
-              time = unique(time_fit_cv)) |>
-    pivot_wider(names_from = month, values_from = rmse) |>
-    rename(NNGP = nngp,
-           `Theta Discretization` = discrete_theta,
-           `Time (hours)` = time) |>
-    rename_at(vars(`1`:`12`), ~ month.abb) |>
-    write.csv(paste0(save_dir, "cv_rmse_month.csv"), row.names = F)
-    write_table("cv_rmse_month.md")
+
 
 
 #cv prediction one day in october
@@ -167,21 +180,6 @@ cv_out |>
          title = "Max Observed and Predicted Value by Day")
 
 ggsave(paste0(save_dir, "cv_pred_daily_max_hist.png"), width = 8, height = 4) 
-
-#cv prediction one day in october
-cv_out |>
-    filter(time_id == 288) |>
-    ggplot(aes(x = x, y = y)) +
-    geom_point(aes(color = obs))
-
-
-
-#observed value one day in october
-cv_out |>
-    filter(time_id == 288) |>
-    ggplot(aes(x = x, y = y)) +
-    geom_point(aes(color = estimate))
-
 
 
 others_out <- lapply(output, 
@@ -470,7 +468,7 @@ corr_by_dist_inv(0.5, med_theta_beta)
 ########################################################
 
 
-load("../../data/Grid_PM25.RData")
+load("../../data/howard_uploaded/Grid_PM25.RData")
 library(grmbayes)
 library(tidyverse)
 
@@ -490,7 +488,7 @@ grid.info
 table(ctm$date)
 
 
-ctm_fit <- readRDS("../../hpc/output/data/full_grid/full_grid_0.5_ord.RDS")
+ctm_fit <- readRDS("../../output/results/fits/full_us_fit_0.5_ordinary.RDS")
 ctm_fit <- ctm_fit$ctm_fit
 
 #ctm_pred <- grm_pred(grm.fit = ctm_fit,
@@ -505,7 +503,7 @@ ctm_fit <- ctm_fit$ctm_fit
 #                     include.multiplicative.annual.resid = T,
 #                     n.iter = 1000,
 #                     verbose = T)
-ctm_pred <- readRDS("../../output/data/grid_data_full_grid_pred_0.5.RDS")
+ctm_pred <- readRDS("../../output/results/preds/preds.RDS")
 
 ctm_pred$date <- ctm$date
 ctm_pred$lat <- ctm$grid_lat.y

@@ -13,6 +13,7 @@ obs$space_id <- as.numeric(as.factor(obs$maiac_id))
 obs$time_id <- as.numeric(as.factor(as.numeric(obs$date)))
 obs$spacetime_id <- 1
 
+
 saveRDS(obs, "../../data/created/obs.rds")
 
 
@@ -31,9 +32,13 @@ preds$x <- preds$cen_x
 preds$y <- preds$cen_y
 preds <- preds[, !(names(preds) %in% c("cen_x", "cen_y"))]
 
+
 preds$date <- as.Date(preds$date)
 preds$space_id <- as.numeric(as.factor(preds$maiac_id))
-preds$time_id <- as.numeric(as.factor(as.numeric(preds$date)))
+
+#join on time_id from obs by date
+preds$time_id <- as.numeric(factor(as.numeric(preds$date), 
+                                      levels = levels(as.factor(as.numeric(obs$date)))))
 preds$spacetime_id <- 1
 
 saveRDS(preds, "../../data/created/preds.rds")

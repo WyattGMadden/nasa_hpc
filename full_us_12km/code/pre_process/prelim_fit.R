@@ -122,11 +122,16 @@ mean_theta_beta <- mean(others_out$theta.beta[others_out$matern_nu == 0.5])
 mean_theta <- max(c(mean_theta_alpha, mean_theta_beta))
 
 
+
 #inverse correlation
 distance <- - mean_theta * log(correlation)
 buffer_0.8 <- - mean_theta * log(0.7)
 buffer_0.5 <- - mean_theta * log(0.3)
 
+
+
+summary(others_out$theta.alpha)
+summary(others_out$theta.beta)
 
 
 

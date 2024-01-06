@@ -11,4 +11,3 @@ module purge
 module load R
 
 Rscript -e "source('preds.R'); us_preds()"
-
