@@ -19,7 +19,9 @@ us_preds <- function() {
                                 spacetime.id = pred_dat$spacetime_id,
                                 n.iter = 2000,
                                 verbose = T,
-                                in.sample = F)
+                                in.sample = F,
+                                include.random.effects = T)
+
 
 
     saveRDS(preds,
