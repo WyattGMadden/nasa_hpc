@@ -271,13 +271,7 @@ or_map <- map_data("state") %>%
 obs |>
   filter(date == '2018-10-08') |>
   ggplot() +
-   geom_polygon(data = ca_map, 
-                aes(x = long, 
-                    y = lat, 
-                    group = group), 
-                fill = NA, 
-                color = "black") +
-   geom_polygon(data = or_map, 
+   geom_polygon(data = us_map, 
                 aes(x = long, 
                     y = lat, 
                     group = group), 
@@ -503,11 +497,14 @@ ctm_fit <- ctm_fit$ctm_fit
 #                     include.multiplicative.annual.resid = T,
 #                     n.iter = 1000,
 #                     verbose = T)
+#predictions
 ctm_pred <- readRDS("../../output/results/preds/preds.RDS")
+#data used to make predictions
+ctm_pred_info <- readRDS("../../data/created/preds.rds")
 
-ctm_pred$date <- ctm$date
-ctm_pred$lat <- ctm$grid_lat.y
-ctm_pred$lon <- ctm$grid_lon.y
+ctm_pred$date <- ctm_pred_info$date
+ctm_pred$lat <- ctm_pred_info$grid_lat
+ctm_pred$lon <- ctm_pred_info$grid_lon
     
 
 
