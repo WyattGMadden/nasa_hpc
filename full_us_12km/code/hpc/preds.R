@@ -5,9 +5,8 @@ us_preds <- function() {
 
     obs <- readRDS("../../data/created/obs.rds")
     pred_dat <- readRDS("../../data/created/preds.rds")
-    names(pred_dat)
 
-
+    cat("start predictions \n")
 
     preds <- grmbayes::grm_pred(grm.fit = fit,
                                 X.pred = pred_dat$pm25_tot_ncar,
@@ -22,8 +21,12 @@ us_preds <- function() {
                                 in.sample = F,
                                 include.random.effects = T)
 
+    cat("save predictions \n")
 
 
     saveRDS(preds,
             "../../output/results/preds/preds.RDS")
+
+    cat("job done \n")
+
 }
