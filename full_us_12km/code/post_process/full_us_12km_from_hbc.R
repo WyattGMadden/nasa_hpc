@@ -466,15 +466,17 @@ load("../../data/howard_uploaded/Grid_PM25.RData")
 library(grmbayes)
 library(tidyverse)
 
-obs <- OBS |> 
+obs.info <- OBS.info |> 
     rename_all(tolower)
+
 
 grid.info <- grid.info |> 
     rename_all(tolower)
 
+
 ctm <- CTM |> 
     rename_all(tolower) |> 
-    left_join(grid.info,
+    left_join(grid.info[, c("grid_cell", "x", "y")],
               by = "grid_cell")
 ctm$time_id <- as.integer(factor(ctm$date))
 ctm$spacetime_id <- rep(1, nrow(ctm))
@@ -500,7 +502,16 @@ ctm_fit <- ctm_fit$ctm_fit
 #predictions
 ctm_pred <- readRDS("../../output/results/preds/preds.RDS")
 #data used to make predictions
-ctm_pred_info <- readRDS("../../data/created/preds.rds")
+ctm_pred_info <- readRDS("../../data/created/preds.rds") |>
+    select(-c(grid_lat, grid_lon)) |>
+    left_join(grid.info[, c("grid_cell", "grid_lon", "grid_lat")],
+              by = "grid_cell") 
+
+
+
+sum(ctm_pred$space.id != ctm_pred_info$space_id)
+sum(ctm_pred$time.id != ctm_pred_info$time_id)
+sum(ctm_pred$spacetime.id != ctm_pred_info$spacetime_id)
 
 ctm_pred$date <- ctm_pred_info$date
 ctm_pred$lat <- ctm_pred_info$grid_lat
@@ -510,12 +521,26 @@ ctm_pred$lon <- ctm_pred_info$grid_lon
 
 ctm_pred |>
   filter(date == '2018-10-08') |>
+  filter(lon > -120,
+         lon < -115,
+         lat > 35,
+         lat < 40) |>
   ggplot() +
   geom_point(aes(x = lon, 
                  y = lat, 
-                 color = estimate),
+                 color = alpha_space),
              shape = 15,
-             size = 0.8) +
+             size = 4) +
+  geom_point(data = obs |>
+               filter(date == '2018-10-08',
+                      lat_aqs > 35,
+                      lat_aqs < 40,
+                      lon_aqs > -120,
+                      lon_aqs < -115),
+             aes(x = lon_aqs,
+                 y = lat_aqs),
+             shape = 15,
+             size = 1) +
   scale_colour_viridis_c(
     guide = guide_colorbar(
       barwidth = 0.5, 

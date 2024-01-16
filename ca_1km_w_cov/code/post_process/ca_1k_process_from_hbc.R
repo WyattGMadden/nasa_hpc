@@ -617,13 +617,23 @@ library(tidyverse)
 preds_est <- readRDS("../../output/results/preds/preds.RDS")
 
 preds <- readRDS("../../data/created/preds.rds")
-preds <- merge(preds, 
-               locs[, c("longitude", "latitude", "maiac_id")],
-               by.x = "maiac_id", 
-               by.y = "maiac_id", 
-               all.x = TRUE)
+sum(preds_est$space.id != preds$space_id)
+sum(preds_est$time.id != preds$time_id)
+sum(preds_est$spacetime.id != preds$spacetime_id)
 preds$estimate <- preds_est$estimate
 preds$sd <- preds_est$sd
+preds$alpha_time <- preds_est$alpha_time
+preds$beta_time <- preds_est$beta_time
+preds$alpha_space <- preds_est$alpha_space
+preds$beta_space <- preds_est$beta_space
+preds <- merge(preds, 
+               locs[, c("longitude", "latitude", "maiac_id")],
+               by = "maiac_id", 
+               sort = F,
+               all.x = TRUE)
+preds_est
+preds
+
 
 
 
@@ -707,15 +717,36 @@ cmaq_pred_locs <- cmaq_pred |>
 
 unique(cmaq_pred_locs$time.id)
 unique(cmaq_pred_locs$spacetime.id)
- cmaq_pred |>
-  filter(time.id == 76) |>
-  filter(space.id == 10) |>
+
+sort(unique(preds$time_id))
+unique(preds$space_id)
+head(preds)$alpha_time
+
+preds |>
+    filter(time_id == 194) |>
+    pull(alpha_space) |>
+    summary()
+    hist()
+
+preds_temp <- preds |>
+    filter(x > -11000000,
+           x < -10800000,
+           y > 3500000,
+           y < 3700000)
+
+range(preds$latitude)
+range(preds$longitude)
+preds_temp  |>
+  filter(time_id == 194) |>
+  filter(beta_space >-0.1 & beta_space < 0.1) |>
+
+#  filter(space_id == 10) |>
   ggplot() +
   geom_point(aes(x = x, 
                  y = y,
-                 color = alpha_time),
+                 color = beta_space),
              shape = 15,
-             size = 5, alpha = 0.5) +
+             size = 2) +
 #  geom_point(data = obs |>
 #               filter(date == '2018-07-08'),
 #             aes(x = longitude, 

@@ -10,9 +10,9 @@ full_preds <- function() {
 
     preds <- grmbayes::grm_pred(grm.fit = fit,
                                 X.pred = pred_dat$aod.final,
-                                L.pred = pred_dat[, c("elevation", "population")],
-                                M.pred = pred_dat[, c("cloud", "v_wind", "hpbl",
-                                                      "u_wind", "short_rf", "humidity_2m")],
+                                L = obs[, c("elevation", "population")],
+                                M = obs[, c("cloud", "v_wind", "hpbl",
+                                            "u_wind", "short_rf", "humidity_2m")],
                                 coords.Y = obs[, c("x", "y")],
                                 space.id.Y = obs$space_id,
                                 coords.pred = pred_dat[, c("x", "y")],
