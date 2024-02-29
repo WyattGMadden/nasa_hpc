@@ -13,6 +13,23 @@ obs$time_id <- as.numeric(as.factor(as.numeric(obs$date)))
 obs$spacetime_id <- as.numeric(substr(obs$date, 6, 7))
 
 
+#remove space ids that don't show up in every spacetime
+unique_space_spacetime_ids <- unique(paste(obs$space_id, obs$spacetime_id, sep = "-"))
+all_possible_ids <- paste(rep(1:max(obs$space_id), times = max(obs$spacetime_id)),
+                          rep(1:max(obs$spacetime_id), each = max(obs$space_id)),
+                          sep = "-")
+
+not_present <- all_possible_ids[!(all_possible_ids %in% unique_space_spacetime_ids)]
+offending_space_ids <- sub("-.*$", "", not_present)
+length(unique(obs$space_id))
+
+dim(obs)
+obs <- obs[!(obs$space_id %in% as.integer(offending_space_ids)), ]
+obs$space_id <- as.numeric(as.factor(obs$aqs_site_id))
+obs$time_id <- as.numeric(as.factor(as.numeric(obs$date)))
+obs$spacetime_id <- as.numeric(substr(obs$date, 6, 7))
+
+
 saveRDS(obs, "../../data/created/obs.rds")
 
 
