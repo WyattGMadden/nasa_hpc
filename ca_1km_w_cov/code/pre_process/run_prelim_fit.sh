@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=1          # cpu-cores per task (>1 if multi-threaded tasks)
 #SBATCH --array=1-3
 #SBATCH --mem=16                   # total memory per node (4 GB per cpu-core is default)
-#SBATCH -o pre-process-ca-%A_%a.out  # output file format (%A is jobID, %a is task index)
+#SBATCH -o prelim-fit-ca-%A_%a.out  # output file format (%A is jobID, %a is task index)
 module purge
 module load R
 
