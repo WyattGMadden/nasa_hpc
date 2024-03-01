@@ -8,8 +8,8 @@ full_fit <- function(matern.nu, cv) {
     thin <- 4
 
 
-    discrete.theta.alpha.values <- seq(50, 250, 25)       
-    discrete.theta.beta.values <- seq(50, 250, 25)       
+    discrete.theta.alpha.values <- seq(25, 600, 25)       
+    discrete.theta.beta.values <- seq(25, 600, 25)       
 
     time_fit <- system.time({
     ctm_fit <- grmbayes::grm(Y = obs$pm25,
@@ -23,6 +23,20 @@ full_fit <- function(matern.nu, cv) {
                              nngp = T,
                              covariance = "matern",
                              matern.nu = matern.nu,
+                             theta.alpha.a = 3,
+                             theta.alpha.b = 200,
+                             theta.beta.a = 3,
+                             theta.beta.b = 200,
+                             theta.alpha.init = 50,
+                             theta.beta.init = 50,
+                             theta.alpha.tune = 0.2,
+                             theta.beta.tune = 0.2,
+                             tau.alpha.a = 0.005,
+                             tau.alpha.b = 0.005,
+                             tau.beta.a = 0.005,
+                             tau.beta.b = 0.005,
+                             tau.alpha.tune = 0.05,
+                             tau.beta.tune = 0.05,
                              discrete.theta.gibbs = F,
                              discrete.theta.alpha.values = discrete.theta.alpha.values,
                              discrete.theta.beta.values = discrete.theta.beta.values,
@@ -45,6 +59,20 @@ full_fit <- function(matern.nu, cv) {
                                    nngp = T,
                                    covariance = "matern",
                                    matern.nu = matern.nu,
+                                     theta.alpha.a = 3,
+                                     theta.alpha.b = 200,
+                                     theta.beta.a = 3,
+                                     theta.beta.b = 200,
+                                     theta.alpha.init = 50,
+                                     theta.beta.init = 50,
+                                     theta.alpha.tune = 0.2,
+                                     theta.beta.tune = 0.2,
+                                     tau.alpha.a = 0.005,
+                                     tau.alpha.b = 0.005,
+                                     tau.beta.a = 0.005,
+                                     tau.beta.b = 0.005,
+                                     tau.alpha.tune = 0.05,
+                                     tau.beta.tune = 0.05,
                                    discrete.theta.gibbs = F,
                                    discrete.theta.alpha.values = discrete.theta.alpha.values,
                                    discrete.theta.beta.values = discrete.theta.beta.values,
