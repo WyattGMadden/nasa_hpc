@@ -199,7 +199,7 @@ others_out <- lapply(output,
 others_out |>
     ggplot(aes(x = iter, y = theta.alpha)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type, scales = "free") +
+    facet_grid(matern_nu ~ cv_type) +
     labs(x = "Iteration", 
          y = expression(theta[alpha]), 
          title = "Trace Plot of " ~ theta[alpha],
@@ -209,7 +209,7 @@ ggsave(paste0(save_dir, "theta_alpha_trace.png"), width = 12, height = 6)
 others_out |>
     ggplot(aes(x = iter, y = theta.beta)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type, scales = "free") +
+    facet_grid(matern_nu ~ cv_type) +
     labs(x = "Iteration", 
          y = expression(theta[alpha]), 
          title = "Trace Plot of " ~ theta[beta],
@@ -605,6 +605,170 @@ corr_by_dist_inv(0.5, med_theta_alpha)
 corr_by_dist_inv(0.5, med_theta_beta)
 
 
+########################################################
+#############Estimate plot ######################
+########################################################
+library(grmbayes)
+library(tidyverse)
+fit_dat <- readRDS("../../output/results/fits/fit_0.5_ordinary.RDS")
+alpha_space <- fit_dat$ctm_fit$alpha.space
+alpha_space$mean_alpha_space <- rowMeans(alpha_space[, 3:ncol(alpha_space)])
+alpha_space <- alpha_space[, c("space.id", "spacetime.id", "mean_alpha_space")]
+beta_space <- fit_dat$ctm_fit$beta.space
+beta_space$mean_beta_space <- rowMeans(beta_space[, 3:ncol(beta_space)])
+beta_space <- beta_space[, c("space.id", "spacetime.id", "mean_beta_space")]
+
+obs                     
+obs_loc <- unique(obs[, c("space_id", "latitude", "longitude", "x", "y")])
+
+
+alpha_space <- merge(alpha_space,
+                     obs_loc,
+                     by.x = "space.id",
+                     by.y = "space_id",
+                     all.x = TRUE)
+
+beta_space <- merge(beta_space,
+                     obs_loc,
+                     by.x = "space.id",
+                     by.y = "space_id",
+                     all.x = TRUE)
+
+
+
+
+alpha_space_small <- alpha_space |>
+    filter(latitude > 37.25 & latitude < 38.5,
+           longitude > -123.5 & longitude < -121.75)
+
+beta_space_small <- beta_space |>
+    filter(latitude > 37.25 & latitude < 38.5,
+           longitude > -123.5 & longitude < -121.75)
+
+pred_map_small <- alpha_space_small |>
+  ggplot() +
+  geom_point(aes(x = longitude, 
+                 y = latitude, 
+                 color = mean_alpha_space)) +
+  scale_colour_viridis_c(
+    guide = guide_colorbar(
+      barwidth = 0.25, 
+      barheight = 2,
+      title.theme = element_text(size = 4),
+      label.theme = element_text(size = 3)
+    )) +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       color = "Mean Alpha Space") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(1, 1), 
+    legend.justification = c(1, 1),
+    legend.background = element_rect(fill = "transparent", color = "black"),
+    legend.key.size = unit(0.8, "cm")
+  )
+
+ggsave(paste0(save_dir, "alpha_space_est_map_small_20181008.png"), 
+       pred_map_small,
+       dpi = 600,
+       width = 4, 
+       height = 3)
+
+pred_map <- alpha_space |>
+  ggplot() +
+  geom_point(aes(x = longitude, 
+                 y = latitude, 
+                 color = mean_alpha_space)) +
+  scale_colour_viridis_c(
+    guide = guide_colorbar(
+      barwidth = 0.25, 
+      barheight = 2,
+      title.theme = element_text(size = 4),
+      label.theme = element_text(size = 3)
+    )) +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       color = "Mean Alpha Space") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(1, 1), 
+    legend.justification = c(1, 1),
+    legend.background = element_rect(fill = "transparent", color = "black"),
+    legend.key.size = unit(0.8, "cm")
+  )
+
+ggsave(paste0(save_dir, "alpha_space_est_map_20181008.png"), 
+       pred_map,
+       dpi = 600,
+       width = 4, 
+       height = 3)
+
+
+pred_map_small <- beta_space_small |>
+  ggplot() +
+  geom_point(aes(x = longitude, 
+                 y = latitude, 
+                 color = mean_beta_space)) +
+  scale_colour_viridis_c(
+    guide = guide_colorbar(
+      barwidth = 0.25, 
+      barheight = 2,
+      title.theme = element_text(size = 4),
+      label.theme = element_text(size = 3)
+    )) +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       color = "Mean Beta Space") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(1, 1), 
+    legend.justification = c(1, 1),
+    legend.background = element_rect(fill = "transparent", color = "black"),
+    legend.key.size = unit(0.8, "cm")
+  )
+
+ggsave(paste0(save_dir, "beta_space_est_map_small_20181008.png"), 
+       pred_map_small,
+       dpi = 600,
+       width = 4, 
+       height = 3)
+
+pred_map <- beta_space |>
+  ggplot() +
+  geom_point(aes(x = x, 
+                 y = y, 
+                 color = mean_beta_space)) +
+  scale_colour_viridis_c(
+    guide = guide_colorbar(
+      barwidth = 0.25, 
+      barheight = 2,
+      title.theme = element_text(size = 4),
+      label.theme = element_text(size = 3)
+    )) +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       color = "Mean Beta Space") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(1, 1), 
+    legend.justification = c(1, 1),
+    legend.background = element_rect(fill = "transparent", color = "black"),
+    legend.key.size = unit(0.8, "cm")
+  )
+
+ggsave(paste0(save_dir, "beta_space_est_map_20181008.png"), 
+       pred_map,
+       dpi = 600,
+       width = 4, 
+       height = 3)
 
 ########################################################
 #############prediction plot ######################
@@ -631,8 +795,8 @@ preds <- merge(preds,
                by = "maiac_id", 
                sort = F,
                all.x = TRUE)
-preds_est
-preds
+
+preds_est$alpha_space
 
 
 
@@ -688,99 +852,26 @@ for (cov in cov_names) {
 
 }
 
-test <- cmaq_pred |>
-    count(time.id, space.id, spacetime.id) |>
-    filter(n > 1)
-
-test <- cmaq_full |>
-    count(time_id, space_id, spacetime_id) |>
-    filter(n > 1)
-unique(test$time_id)
-
-cmaq_full |>
-    distinct(x, y, space_id) |>
-    count(space_id) |>
-    filter(n > 1)
-cmaq_pred$x <- cmaq_full$x
-cmaq_pred$y <- cmaq_full$y
-cmaq_pred
-
-sum(cmaq_pred$space.id != cmaq_full$space_id)
-sum(cmaq_pred$time.id != cmaq_full$time_id)
-sum(cmaq_pred$spacetime.id != cmaq_full$spacetime_id)
-
-cmaq_pred_locs <- cmaq_pred |>
-    left_join(cmaq_full,
-              by = c("space.id" = "space_id",
-                     "time.id" = "time_id",
-                     "spacetime.id" = "spacetime_id"))
-
-unique(cmaq_pred_locs$time.id)
-unique(cmaq_pred_locs$spacetime.id)
-
-sort(unique(preds$time_id))
-unique(preds$space_id)
-head(preds)$alpha_time
-
-preds |>
-    filter(time_id == 194) |>
-    pull(alpha_space) |>
-    summary()
-    hist()
-
-preds_temp <- preds |>
-    filter(x > -11000000,
-           x < -10800000,
-           y > 3500000,
-           y < 3700000)
-
-range(preds$latitude)
-range(preds$longitude)
-preds_temp  |>
-  filter(time_id == 194) |>
-  filter(beta_space >-0.1 & beta_space < 0.1) |>
-
-#  filter(space_id == 10) |>
-  ggplot() +
-  geom_point(aes(x = x, 
-                 y = y,
-                 color = beta_space),
-             shape = 15,
-             size = 2) +
-#  geom_point(data = obs |>
-#               filter(date == '2018-07-08'),
-#             aes(x = longitude, 
-#                 y = latitude,
-#                 color = log(pm25)),
-#             shape = 15,
-#             size = 10) +
-  scale_colour_viridis_c(
-    guide = guide_colorbar(
-      barwidth = 0.5, 
-      barheight = 4,
-      title.theme = element_text(size = 8),
-      label.theme = element_text(size = 6)
-    )) +
-  labs(x = "Longitude", 
-       y = "Latitude", 
-       color = "PM2.5 (ug/m^3)") +
-  theme_bw() +
-  theme(
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    legend.position = c(1, 0.5), 
-    legend.justification = c(1, 0),
-    legend.background = element_rect(fill = "transparent", color = "black"),
-    legend.key.size = unit(0.8, "cm")
-  )
 
 
-preds |>
-    pull(time_id) |>
-    unique()
 
-pred_map_20180708 <- preds |>
-  filter(date == '2018-07-28') |>
+
+
+preds_one_day <- preds |>
+  filter(date == '2018-07-28')
+
+preds_one_day_small <- preds_one_day |>
+    filter(latitude > 37.25 & latitude < 38.5,
+           longitude > -123.5 & longitude < -121.75)
+
+obs_one_day <- obs |>
+  filter(date == '2018-07-28')
+
+obs_one_day_small <- obs_one_day |>
+    filter(latitude > 37.25 & latitude < 38.5,
+           longitude > -123.5 & longitude < -121.75)
+
+pred_map_20180708 <- preds_one_day |>
   ggplot() +
   geom_point(aes(x = longitude, 
                  y = latitude,
@@ -816,9 +907,128 @@ pred_map_20180708 <- preds |>
 
 ggsave(paste0(save_dir, "pred_map_20180728.png"), 
        pred_map_20180708,
-       dpi = 1600,
+       dpi = 600,
        width = 10, 
        height = 16)
+
+
+pred_map_small_20180708 <- preds_one_day_small |>
+  ggplot() +
+  geom_point(aes(x = longitude, 
+                 y = latitude,
+                 color = log(estimate)),
+             shape = 15,
+             size = 0.4) +
+  geom_point(data = obs_one_day_small,
+             aes(x = longitude, 
+                 y = latitude),
+             shape = 21,
+             size = 3,
+             alpha = 0.3) +
+  scale_colour_viridis_c(
+    guide = guide_colorbar(
+      barwidth = 0.4, 
+      barheight = 4,
+      title.theme = element_text(size = 8),
+      label.theme = element_text(size = 6)
+    )) +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       color = "PM2.5 (ug/m^3)") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(0, 0), 
+    legend.justification = c(0, 0),
+    legend.background = element_rect(fill = "transparent", color = "black"),
+    legend.key.size = unit(3, "cm")
+  )
+
+ggsave(paste0(save_dir, "pred_map_small_20180728.png"), 
+       pred_map_small_20180708,
+       dpi = 600,
+       width = 4, 
+       height = 4)
+
+pred_map_small_20180708_alpha_space <- preds_one_day_small |>
+  ggplot() +
+  geom_point(aes(x = longitude, 
+                 y = latitude,
+                 color = alpha_space),
+             shape = 15,
+             size = 0.4) +
+  geom_point(data = obs_one_day_small,
+             aes(x = longitude, 
+                 y = latitude),
+             shape = 21,
+             size = 3,
+             alpha = 0.3) +
+  scale_colour_viridis_c(
+    guide = guide_colorbar(
+      barwidth = 0.4, 
+      barheight = 4,
+      title.theme = element_text(size = 8),
+      label.theme = element_text(size = 6)
+    )) +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       color = "Spatial Intercept") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(0, 0), 
+    legend.justification = c(0, 0),
+    legend.background = element_rect(fill = "transparent", color = "black"),
+    legend.key.size = unit(3, "cm")
+  )
+
+ggsave(paste0(save_dir, "pred_map_small_20180728_alpha_space.png"), 
+       pred_map_small_20180708_alpha_space,
+       dpi = 600,
+       width = 4, 
+       height = 4)
+
+pred_map_small_20180708_beta_space <- preds_one_day_small |>
+  ggplot() +
+  geom_point(aes(x = longitude, 
+                 y = latitude,
+                 color = beta_space),
+             shape = 15,
+             size = 0.4) +
+  geom_point(data = obs_one_day_small,
+             aes(x = longitude, 
+                 y = latitude),
+             shape = 21,
+             size = 3,
+             alpha = 0.3) +
+  scale_colour_viridis_c(
+    guide = guide_colorbar(
+      barwidth = 0.4, 
+      barheight = 4,
+      title.theme = element_text(size = 8),
+      label.theme = element_text(size = 6)
+    )) +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       color = "Spatial Slope") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(0, 0), 
+    legend.justification = c(0, 0),
+    legend.background = element_rect(fill = "transparent", color = "black"),
+    legend.key.size = unit(3, "cm")
+  )
+
+ggsave(paste0(save_dir, "pred_map_small_20180728_beta_space.png"), 
+       pred_map_small_20180708_beta_space,
+       dpi = 600,
+       width = 4, 
+       height = 4)
+
 
 table(obs$date)
 obs
@@ -920,6 +1130,7 @@ ctm_pred_ws <- merge(ctm_pred_within_sample,
                 by.x = c("space.id", "time.id"),
                 by.y = c("space_id", "time_id"),
                 all.x = TRUE) 
+tail(ctm_pred_ws)
 
 ctm_pred_ws |>
     ggplot(aes(x = estimate, y = pm25)) +
@@ -938,7 +1149,8 @@ ctm_pred_ws |>
     sqrt()
 
 
-library(glmnet)
+
+
 X <- as.matrix(obs[, c("elevation", "population",
                        "cloud", "v_wind", "hpbl",
                        "u_wind", "short_rf", "humidity_2m",
@@ -953,19 +1165,92 @@ y <- obs$pm25
 # Fit elastic net model
 # alpha is the mixing parameter (0 <= alpha <= 1)
 # lambda is the regularization parameter
+#library(glmnet)
 set.seed(123)  
-cv_fit <- cv.glmnet(X, y, alpha = 0.5, type.measure = "mse")
-best_lambda <- cv_fit$lambda.min
-predictions <- predict(cv_fit, 
-                       newx = X, 
-                       s = best_lambda)
+glm_fit_cv <- glmnet::cv.glmnet(X, y, alpha = 0.5, type.measure = "mse")
+glm_fit <- glmnet::glmnet(X, y, alpha = 0.5, type.measure = "mse")
+best_lambda <- glm_fit_cv$lambda.min
+glmnet_preds <- glmnet:::predict.glmnet(object = glm_fit, 
+                                           newx = X, 
+                                           s = best_lambda)
+tail(glmnet_preds)
 #rmse
-sqrt(mean((predictions - y)^2))
+sqrt(mean((glmnet_preds - y)^2))
 
-sd(y)
+# Fit Random Forest model
+library(randomForest)
+set.seed(123)
+rf_fit <- randomForest::randomForest(x = X, y = y, ntree = 1000, do.trace = 1)
+rf_preds <- predict(rf_fit, X)
+#rmse
+sqrt(mean((rf_preds - y)^2))
 
-pred_compare <- 
 
+#############################################
+############# cv preds ######################
+#############################################
+
+ctm_pred_cv_all <- readRDS("../../output/results/fits/fit_0.5_ordinary.RDS")
+
+obs_cv <- obs[!is.na(ctm_pred_cv$ctm_fit_cv$estimate), ]
+
+ctm_pred_cv <- ctm_pred_cv_all$ctm_fit_cv[!is.na(ctm_pred_cv$ctm_fit_cv$estimate), ]
+
+sqrt(mean((ctm_pred_cv$estimate - ctm_pred_cv$obs)^2))
+
+
+
+X_cv <- as.matrix(obs_cv[, c("elevation", "population",
+                       "cloud", "v_wind", "hpbl",
+                       "u_wind", "short_rf", "humidity_2m")])
+X_cv <- as.matrix(obs_cv[, c("elevation", "population",
+                       "cloud", "v_wind", "hpbl",
+                       "u_wind", "short_rf", "humidity_2m",
+                       "time_id", "space_id")])
+y_cv <- obs_cv$pm25
+
+
+# Fit elastic net model cv
+set.seed(123)  # for reproducibility
+glm_folds <- caret::createFolds(y_cv, k = 10, list = TRUE)  # Replace 5 with desired number of folds
+glm_cv_preds <- rep(NA, length(y_cv))
+
+for(i in 1:length(glm_folds)) {
+  # Split the data
+  train_indices <- unlist(glm_folds[-i])
+  test_indices <- unlist(glm_folds[i])
+  X_train <- X_cv[train_indices, ]
+  y_train <- y_cv[train_indices]
+  X_test <- X_cv[test_indices, ]
+
+  # Fit the model
+  fit <- glmnet::cv.glmnet(X_train, y_train)
+
+  # Predict on the test set
+  predictions <- glmnet:::predict.cv.glmnet(fit, newx = X_test, s = "lambda.min")
+
+  # Store the predictions
+  glm_cv_preds[test_indices] <- predictions
+}
+sqrt(mean((glm_cv_preds - ctm_pred_cv$obs)^2))
+
+
+glm_fit_cv <- glmnet::cv.glmnet(X, y, alpha = 0.5, type.measure = "mse")
+best_lambda <- glm_fit_cv$lambda.min
+glmnet_preds_cv <- glmnet:::predict.cv.glmnet(object = glm_fit_cv, 
+                                              newx = X, 
+                                              s = best_lambda)
+#rmse
+sqrt(mean((glmnet_preds_cv - y)^2))
+
+
+
+
+# Fit Random Forest model cv
+data_combined <- data.frame(response = y_cv, X_cv)
+control <- caret::trainControl(method = "cv", number = 10)
+rf_model <- caret::train(response ~ ., data = data_combined, method = "rf", trControl = control)
+rf_cv_preds <- rf_model$pred$pred
 
 
 

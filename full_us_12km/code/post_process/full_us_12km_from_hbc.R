@@ -22,6 +22,9 @@ load("../../data/howard_uploaded/Grid_PM25.RData")
 locs <- grid.info
 names(locs) <- tolower(names(locs))
 
+obs.info <- OBS.info
+names(obs.info) <- tolower(names(obs.info))
+
 
 obs <- readRDS("../../data/created/obs.rds")
 obs <- merge(obs, 
@@ -456,6 +459,145 @@ corr_by_dist_inv(0.5, med_theta_alpha)
 corr_by_dist_inv(0.5, med_theta_beta)
 
 
+########################################################
+#############Estimate plot ######################
+########################################################
+library(grmbayes)
+library(tidyverse)
+fit_dat <- readRDS("../../output/results/fits/full_us_fit_0.5_ordinary.RDS")
+alpha_space <- fit_dat$ctm_fit$alpha.space
+alpha_space$mean_alpha_space <- rowMeans(alpha_space[, 3:ncol(alpha_space)])
+alpha_space <- alpha_space[, c("space.id", "spacetime.id", "mean_alpha_space")]
+beta_space <- fit_dat$ctm_fit$beta.space
+beta_space$mean_beta_space <- rowMeans(beta_space[, 3:ncol(beta_space)])
+beta_space <- beta_space[, c("space.id", "spacetime.id", "mean_beta_space")]
+
+                     
+obs_loc <- unique(obs[, c("space_id", "lat_aqs", "lon_aqs", "x", "y")])
+
+
+alpha_space <- merge(alpha_space,
+                     obs_loc,
+                     by.x = "space.id",
+                     by.y = "space_id",
+                     all.x = TRUE)
+
+beta_space <- merge(beta_space,
+                     obs_loc,
+                     by.x = "space.id",
+                     by.y = "space_id",
+                     all.x = TRUE)
+
+
+
+
+alpha_space_small <- alpha_space |>
+  filter(lon_aqs > -88,
+         lon_aqs < -81,
+         lat_aqs > 42,
+         lat_aqs < 46)
+
+beta_space_small <- beta_space |>
+  filter(lon_aqs > -88,
+         lon_aqs < -81,
+         lat_aqs > 42,
+         lat_aqs < 46)
+
+pred_map_small <- alpha_space_small |>
+  ggplot() +
+  geom_point(aes(x = lon_aqs, 
+                 y = lat_aqs, 
+                 color = mean_alpha_space)) +
+  scale_colour_viridis_c(
+    guide = guide_colorbar(
+      barwidth = 0.25, 
+      barheight = 2,
+      title.theme = element_text(size = 4),
+      label.theme = element_text(size = 3)
+    )) +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       color = "Mean Alpha Space") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(1, 1), 
+    legend.justification = c(1, 1),
+    legend.background = element_rect(fill = "transparent", color = "black"),
+    legend.key.size = unit(0.8, "cm")
+  )
+
+ggsave(paste0(save_dir, "alpha_space_est_map_small_20181008.png"), 
+       pred_map_small,
+       dpi = 600,
+       width = 4, 
+       height = 3)
+
+
+pred_map_small <- beta_space_small |>
+  ggplot() +
+  geom_point(aes(x = x, 
+                 y = y, 
+                 color = mean_beta_space)) +
+  scale_colour_viridis_c(
+    guide = guide_colorbar(
+      barwidth = 0.25, 
+      barheight = 2,
+      title.theme = element_text(size = 4),
+      label.theme = element_text(size = 3)
+    )) +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       color = "Mean Beta Space") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(1, 1), 
+    legend.justification = c(1, 1),
+    legend.background = element_rect(fill = "transparent", color = "black"),
+    legend.key.size = unit(0.8, "cm")
+  )
+
+ggsave(paste0(save_dir, "beta_space_est_map_small_20181008.png"), 
+       pred_map_small,
+       dpi = 600,
+       width = 4, 
+       height = 3)
+
+pred_map <- beta_space |>
+  ggplot() +
+  geom_point(aes(x = lon_aqs, 
+                 y = lat_aqs, 
+                 color = mean_beta_space)) +
+  scale_colour_viridis_c(
+    guide = guide_colorbar(
+      barwidth = 0.25, 
+      barheight = 2,
+      title.theme = element_text(size = 4),
+      label.theme = element_text(size = 3)
+    )) +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       color = "Mean Beta Space") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(1, 1), 
+    legend.justification = c(1, 1),
+    legend.background = element_rect(fill = "transparent", color = "black"),
+    legend.key.size = unit(0.8, "cm")
+  )
+
+ggsave(paste0(save_dir, "beta_space_est_map_20181008.png"), 
+       pred_map,
+       dpi = 600,
+       width = 4, 
+       height = 3)
+
+
 
 ########################################################
 #############prediction plot ######################
@@ -519,28 +661,22 @@ ctm_pred$lon <- ctm_pred_info$grid_lon
     
 
 
-ctm_pred |>
-  filter(date == '2018-10-08') |>
-  filter(lon > -120,
-         lon < -115,
-         lat > 35,
-         lat < 40) |>
+ctm_pred_one_day <- ctm_pred |>
+  filter(date == '2018-10-08')
+
+
+obs_one_day <- obs |>
+  filter(date == '2018-10-08')
+
+
+
+pred_map_one_day <- ctm_pred_one_day |>
   ggplot() +
   geom_point(aes(x = lon, 
                  y = lat, 
-                 color = alpha_space),
+                 color = estimate),
              shape = 15,
-             size = 4) +
-  geom_point(data = obs |>
-               filter(date == '2018-10-08',
-                      lat_aqs > 35,
-                      lat_aqs < 40,
-                      lon_aqs > -120,
-                      lon_aqs < -115),
-             aes(x = lon_aqs,
-                 y = lat_aqs),
-             shape = 15,
-             size = 1) +
+             size = 0.3) +
   scale_colour_viridis_c(
     guide = guide_colorbar(
       barwidth = 0.5, 
@@ -561,7 +697,143 @@ ctm_pred |>
     legend.key.size = unit(0.8, "cm")
   )
 
-ggsave(paste0(save_dir, "pred_map_20181008.png"), width = 8, height = 5)
+
+ggsave(paste0(save_dir, "pred_map_20181008.png"), 
+       pred_map_one_day,
+       dpi = 600,
+       width = 8, 
+       height = 5)
+
+ctm_pred_small <- ctm_pred_one_day |>
+  filter(lon > -88,
+         lon < -81,
+         lat > 42,
+         lat < 46)
+
+obs_small <- obs_one_day |>
+  filter(grid_lon > -88,
+         grid_lon < -81,
+         grid_lat > 42,
+         grid_lat < 46)
+
+pred_map_small <- ctm_pred_small |>
+  ggplot() +
+  geom_point(aes(x = lon, 
+                 y = lat, 
+                 color = estimate),
+             shape = 15,
+             size = 2) +
+  geom_point(data = obs_small, 
+             aes(x = lon_aqs,
+                 y = lat_aqs),
+             shape = 21,
+             size = 5,
+             alpha = 0.3) +
+  scale_colour_viridis_c(
+    guide = guide_colorbar(
+      barwidth = 0.25, 
+      barheight = 2,
+      title.theme = element_text(size = 4),
+      label.theme = element_text(size = 3)
+    )) +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       color = "PM2.5 (ug/m^3)") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(1, 0), 
+    legend.justification = c(1, 0),
+    legend.background = element_rect(fill = "transparent", color = "black"),
+    legend.key.size = unit(0.8, "cm")
+  )
+
+ggsave(paste0(save_dir, "pred_map_small_20181008.png"), 
+       pred_map_small,
+       dpi = 600,
+       width = 4, 
+       height = 3)
+
+pred_map_small_alpha_space <- ctm_pred_small |>
+  ggplot() +
+  geom_point(aes(x = lon, 
+                 y = lat, 
+                 color = alpha_space),
+             shape = 15,
+             size = 2) +
+  geom_point(data = obs_small, 
+             aes(x = lon_aqs,
+                 y = lat_aqs),
+             shape = 21,
+             size = 5,
+             alpha = 0.3) +
+  scale_colour_viridis_c(
+    guide = guide_colorbar(
+      barwidth = 0.25, 
+      barheight = 2,
+      title.theme = element_text(size = 4),
+      label.theme = element_text(size = 3)
+    )) +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       color = "Spatial Intercept") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(1, 0), 
+    legend.justification = c(1, 0),
+    legend.background = element_rect(fill = "transparent", color = "black"),
+    legend.key.size = unit(0.8, "cm")
+  )
+
+ggsave(paste0(save_dir, "pred_map_small_alpha_space_20181008.png"), 
+       pred_map_small_alpha_space,
+       dpi = 600,
+       width = 4, 
+       height = 3)
+
+pred_map_small_beta_space <- ctm_pred_small |>
+  ggplot() +
+  geom_point(aes(x = lon, 
+                 y = lat, 
+                 color = beta_space),
+             shape = 15,
+             size = 2) +
+  geom_point(data = obs_small, 
+             aes(x = lon_aqs,
+                 y = lat_aqs),
+             shape = 21,
+             size = 5,
+             alpha = 0.3) +
+  scale_colour_viridis_c(
+    guide = guide_colorbar(
+      barwidth = 0.25, 
+      barheight = 2,
+      title.theme = element_text(size = 4),
+      label.theme = element_text(size = 3)
+    )) +
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       color = "Spatial Slope") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = c(1, 0), 
+    legend.justification = c(1, 0),
+    legend.background = element_rect(fill = "transparent", color = "black"),
+    legend.key.size = unit(0.8, "cm")
+  )
+
+ggsave(paste0(save_dir, "pred_map_small_beta_space_20181008.png"), 
+       pred_map_small_beta_space,
+       dpi = 600,
+       width = 4, 
+       height = 3)
+
+
 
 ctm |>
   filter(date == '2018-10-08') |>

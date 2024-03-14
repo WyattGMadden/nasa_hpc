@@ -1,29 +1,41 @@
 
-fit_mat <- lapply(matern.nu, 
-                  function(x) fit_mat(matern.nu = x, 
-                                      obs_full_us = obs_full_us))
-
-for (i in 1:length(fit_mat)) {
-    fit_mat[[i]]$matern.nu <- matern.nu[i]
-}
-
-fit_mat <- readRDS("../../data/created/prelim_fits.rds")
 
 
+dirs <- list.files("../../data/created/prelim_fit",
+                   full.names = T)
+all <- lapply(dirs,
+              function(x) {
+                  temp <- readRDS(x)
+                  temp$matern_nu <- substr(x, 
+                                           nchar(x) - 6, 
+                                           nchar(x) - 4) |>
+                    as.numeric()
+                  return(temp)
+              })
 
-others_out <- lapply(fit_mat,
+
+others_out <- lapply(all,
                  function(x) {
                      fit <- x$others
-                     fit$matern_nu <- x$matern.nu
+                     fit$matern_nu <- x$matern_nu
                      fit$iter <- 1:nrow(fit)
                      return(fit)
                     }
                  ) |>
     (\(.) Reduce(rbind, .))()
 
-x <- seq(0, 100, 0.001)
-y <- dgamma(x, .005, 0.005)
-plot(x, y, type = "l")
+temp <- all[[1]]
+temp$theta.acc
+temp$theta.acc
+
+dinvgamma <- function(x, alpha, beta) dgamma(1/x, alpha, beta) * (1/x)^2
+dgamma(1.5, 0.5, 0.5)
+
+x <- seq(0.01, 200, 0.01)
+y <- dgamma(x, 0.005, 0.005)
+y <- dinvgamma(x, 3, 200)
+plot(x, y)
+
 library(ggplot2)
 others_out |>
     ggplot(aes(x = iter, y = theta.alpha)) + 
@@ -47,6 +59,17 @@ others_out |>
     ggplot(aes(x = iter, y = sigma2)) + 
     geom_line() +
     facet_grid(matern_nu ~ ., scales = "free")
+
+others_out |>
+    ggplot(aes(x = iter, y = rho.alpha)) + 
+    geom_line() +
+    facet_grid(matern_nu ~ ., scales = "free")
+
+others_out |>
+    ggplot(aes(x = iter, y = rho.beta)) + 
+    geom_line() +
+    facet_grid(matern_nu ~ ., scales = "free")
+
 others_out |>
     ggplot(aes(x = iter, y = alpha0)) + 
     geom_line() +
