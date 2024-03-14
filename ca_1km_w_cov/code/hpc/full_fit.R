@@ -8,8 +8,8 @@ full_fit <- function(matern.nu, cv) {
     thin <- 4
 
 
-    discrete.theta.alpha.values <- seq(25, 600, 25)       
-    discrete.theta.beta.values <- seq(25, 600, 25)       
+    discrete.theta.alpha.values <- seq(5, 75, 5)       
+    discrete.theta.beta.values <- seq(5, 75, 5)       
 
     time_fit <- system.time({
     ctm_fit <- grmbayes::grm(Y = obs$pm25,
@@ -23,10 +23,10 @@ full_fit <- function(matern.nu, cv) {
                              nngp = T,
                              covariance = "matern",
                              matern.nu = matern.nu,
-                             theta.alpha.a = 3,
-                             theta.alpha.b = 200,
-                             theta.beta.a = 3,
-                             theta.beta.b = 200,
+                             theta.alpha.a = 0.005,
+                             theta.alpha.b = 0.005,
+                             theta.beta.a = 0.005,
+                             theta.beta.b = 0.005,
                              theta.alpha.init = 50,
                              theta.beta.init = 50,
                              theta.alpha.tune = 0.2,
@@ -59,10 +59,10 @@ full_fit <- function(matern.nu, cv) {
                                    nngp = T,
                                    covariance = "matern",
                                    matern.nu = matern.nu,
-                                     theta.alpha.a = 3,
-                                     theta.alpha.b = 200,
-                                     theta.beta.a = 3,
-                                     theta.beta.b = 200,
+                                     theta.alpha.a = 0.005,
+                                     theta.alpha.b = 0.005,
+                                     theta.beta.a = 0.005,
+                                     theta.beta.b = 0.005,
                                      theta.alpha.init = 50,
                                      theta.beta.init = 50,
                                      theta.alpha.tune = 0.2,
