@@ -2,9 +2,16 @@ full_preds <- function() {
 
     #best rmse matern.nu
     fit <- readRDS("../../output/results/fits/fit_0.5_ordinary.RDS")$ctm_fit
+    names(fit)
+    fit$alpha.space |> rowMeans()
 
     obs <- readRDS("../../data/created/obs.rds")
     pred_dat <- readRDS("../../data/created/preds.rds")
+    names(pred_dat)
+
+    dist(unique(pred_dat[1:100, c("x", "y")])) |> summary()
+    dist(unique(obs[sample(1:nrow(obs), 1000), c("x", "y")])) |> summary()
+    head(pred_dat)
 
     cat("start predictions \n")
 

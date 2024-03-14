@@ -15,7 +15,7 @@ fit_mat <- function(matern.nu) {
 
     temp_fit <- grmbayes::grm(Y = obs_full_us$pm_aqs,
                               X = obs_full_us$pm25_tot_ncar,
-                              n.iter = 1000,
+                              n.iter = 5000,
                               burn = 0,
                               thin = 1,
                               nngp = T,
@@ -25,10 +25,11 @@ fit_mat <- function(matern.nu) {
                               theta.alpha.b = 200,
                               theta.beta.a = 3,
                               theta.beta.b = 200,
-                              theta.alpha.tune = 0.05,
-                              theta.beta.tune = 0.05,
-                              theta.alpha.init = 200,
-                              theta.beta.init = 300,
+                              theta.alpha.tune = 0.025,
+                              theta.beta.tune = 0.025,
+                              theta.alpha.init = 100,
+                              theta.beta.init = 100,
+                              sigma.fix.iter.num = 250,
                               tau.alpha.a = 0.005,
                               tau.alpha.b = 0.005,
                               tau.beta.a = 0.005,
@@ -46,7 +47,7 @@ fit_mat <- function(matern.nu) {
     cat("")
     cat("")
     saveRDS(temp_fit, 
-            paste0("../../data/created/prelim_fit_", matern.nu, ".rds"))
+            paste0("../../data/created/prelim_fit/prelim_fit_", matern.nu, ".rds"))
 }
 
 

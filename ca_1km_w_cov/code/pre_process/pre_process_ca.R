@@ -1,11 +1,10 @@
-library(ggplot2)
 #get CTM, grid.info, OBS, OBS.info
 #process observations
 obs <- read.csv("../../data/howard_uploaded/wildfire CA_OR.csv")
 names(obs) <- tolower(names(obs))
 obs <- obs[, names(obs)[2:ncol(obs)]]  #n
-obs$x <- obs$cen_x
-obs$y <- obs$cen_y
+obs$x <- obs$cen_x / 1e3
+obs$y <- obs$cen_y / 1e3
 obs <- obs[, !(names(obs) %in% c("cen_x", "cen_y"))]
 
 obs$date <- as.Date(obs$date)
@@ -13,12 +12,13 @@ obs$space_id <- as.numeric(as.factor(obs$maiac_id))
 obs$time_id <- as.numeric(as.factor(as.numeric(obs$date)))
 obs$spacetime_id <- 1
 
+str(obs)
+
 
 saveRDS(obs, "../../data/created/obs.rds")
 
 
-pred_file_locs <- list.files("../../data/howard_uploaded/predictor_July_2018/", 
-                             full.names = TRUE)
+pred_file_locs <- list.files("../../data/howard_uploaded/predictor_July_2018/", full.names = TRUE)
 pred_file_process <- function(x) {
     pred <- readRDS(x)
     names(pred) <- tolower(names(pred))
@@ -28,8 +28,8 @@ pred_file_process <- function(x) {
 }
 preds <- lapply(pred_file_locs, pred_file_process)
 preds <- do.call(rbind, preds)
-preds$x <- preds$cen_x
-preds$y <- preds$cen_y
+preds$x <- preds$cen_x / 1e3
+preds$y <- preds$cen_y / 1e3
 preds <- preds[, !(names(preds) %in% c("cen_x", "cen_y"))]
 
 
