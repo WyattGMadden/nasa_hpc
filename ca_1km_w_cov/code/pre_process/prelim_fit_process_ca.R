@@ -113,9 +113,15 @@ for (i in 1:length(cv_types)) {
 matern.nu <- c(0.5, 1.5, 2.5)
 cv_types_all <- list.files("../../data/created/cv_objects/")
 cv_types_all <- substr(cv_types_all, 1, nchar(cv_types_all) - 4)
+buffer.size
+buffer_params$cv <- paste0("spatial_buffered_", buffer_params$distance)
+buffer_params$matern.nu <- buffer_params$nu
 job_params <- expand.grid(matern.nu = matern.nu,
-                          cv = cv_types,
-                          stringsAsFactors = FALSE)
+                          cv = c("ordinary", 
+                                 "spatial", 
+                                 "spatial_clustered"),
+                          stringsAsFactors = FALSE) |>
+    rbind(buffer_params[, c("matern.nu", "cv")])
 
 write.csv(job_params, 
           "../../data/created/job_params.csv", 
