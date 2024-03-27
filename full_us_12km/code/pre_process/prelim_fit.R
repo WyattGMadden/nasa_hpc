@@ -47,7 +47,7 @@ fit_mat <- function(matern.nu) {
     cat("")
     cat("")
     saveRDS(temp_fit, 
-            paste0("../../data/created/prelim_fit/prelim_fit_", matern.nu, ".rds"))
+            paste0("~/../projects/hhchang/wmadden/nasa_hpc/full_us_12km/data/created/prelim_fit/prelim_fit_", matern.nu, ".rds"))
 }
 
 

@@ -91,7 +91,7 @@ full_fit <- function(matern.nu, cv) {
                    time_fit = time_fit,
                    time_fit_cv = time_fit_cv)
     saveRDS(output, 
-            paste0("../../output/results/fit_",
+            paste0("~/projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/output/results/prelim_fits/fit_",
                    matern.nu,
                    "_", 
                    cv, 
