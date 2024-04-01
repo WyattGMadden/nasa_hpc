@@ -951,6 +951,9 @@ ggsave(paste0(save_dir, "pred_map_small_20180728.png"),
        width = 4, 
        height = 4)
 
+preds_one_day_small[is.na(preds_one_day_small$alpha_space), c("longitude", "latitude")]
+obs_one_day_small[, c("longitude", "latitude")]
+nrow(obs_one_day_small)
 pred_map_small_20180708_alpha_space <- preds_one_day_small |>
   ggplot() +
   geom_point(aes(x = longitude, 

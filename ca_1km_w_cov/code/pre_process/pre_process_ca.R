@@ -6,6 +6,8 @@ obs <- obs[, names(obs)[2:ncol(obs)]]  #n
 obs$x <- obs$cen_x / 1e3
 obs$y <- obs$cen_y / 1e3
 obs <- obs[, !(names(obs) %in% c("cen_x", "cen_y"))]
+obs <- obs[obs$state.y == "California", ]
+
 
 obs$date <- as.Date(obs$date)
 obs$space_id <- as.numeric(as.factor(obs$maiac_id))
@@ -31,6 +33,7 @@ preds <- do.call(rbind, preds)
 preds$x <- preds$cen_x / 1e3
 preds$y <- preds$cen_y / 1e3
 preds <- preds[, !(names(preds) %in% c("cen_x", "cen_y"))]
+preds <- preds[preds$stusps == "CA", ]
 
 
 preds$date <- as.Date(preds$date)
