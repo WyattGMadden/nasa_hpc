@@ -32,53 +32,23 @@ obs <- merge(obs,
              by.x = "grid_cell", 
              by.y = "grid_cell", 
              all.x = TRUE)
+
 #get distance matrix
 temp <- obs[, c("x", "y")] |> distinct() |> dist()
-summary(temp)
-
-obs |>
-    select(x, y) |>
-    distinct() |>
-    ggplot(aes(x = x, y = y)) +
-    geom_point() +
-    coord_fixed()
 
 
 
-my_func <- function(x) {
-                     print(paste0("reading in ", x))
+output_files <- list.files("../../output/results/fits", full.names = T)
+output_files <- output_files[grepl(".RDS", output_files)]
 
-                     return(readRDS(x))
-                 }
+output_fit_files <- output_files[grepl("fit_", output_files)]
+output_cv_files <- output_files[grepl("cv_", output_files)]
 
-safe_function <- function(x) {
-  tryCatch(
-    {
-        # Try to run the function
-        my_func(x)
-    },
-    error = function(e) {
-      # Handle the error
-      # You can return a specific value or error message
-    print(paste0("error reading in ", x))
-      return(NA)  # For example, return NA on error
-    }
-  )
-}
+output_fits <- lapply(output_fit_files, readRDS)
+output_cvs <- lapply(output_cv_files, readRDS)
 
 
-output_temp <- lapply(list.files("../../output/results/fits/", full.names = T), 
-                      safe_function)
-length(output_temp)
-
-which_nna <- list.files("../../output/results/fits", full.names = T) != "../../output/results/fits/full_us_fit_1.5_spatial_buffered_5.69.RDS"
-output <- output_temp[which_nna]
-
-
-temp <- output[[1]]
-names(temp)
-
-cv_out <- lapply(output, 
+cv_out <- lapply(output_cvs, 
                  function(x) {
                      cv_fit <- x$ctm_fit_cv 
                      cv_fit <- cv_fit[!is.na(cv_fit$estimate), ]
@@ -109,6 +79,9 @@ cv_out <- merge(cv_out,
                by.x = c("space_id", "time_id"),
                by.y = c("space_id", "time_id"),
                all.x = TRUE)
+
+
+unique(cv_out$cv_type_spec)
 
 test <- cv_out |>
     filter(cv_type_spec == 'Ordinary',
@@ -185,7 +158,7 @@ cv_out |>
 ggsave(paste0(save_dir, "cv_pred_daily_max_hist.png"), width = 8, height = 4) 
 
 
-others_out <- lapply(output, 
+others_out <- lapply(output_fits, 
                  function(x) {
                      cv_fit <- x$ctm_fit$others
                      cv_fit$matern_nu <- x$matern.nu

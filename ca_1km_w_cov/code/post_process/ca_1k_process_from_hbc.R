@@ -21,9 +21,17 @@ preds <- merge(preds,
                by.y = "maiac_id", 
                all.x = TRUE)
 
-output_files <- list.files("../../output/results/fits/", full.names = T)
+output_files <- list.files("../../output/results/fits", full.names = T)
 output_files <- output_files[grepl(".RDS", output_files)]
-output <- lapply(output_files, readRDS)
+
+output_fit_files <- output_files[grepl("fit_", output_files)]
+output_cv_files <- output_files[grepl("cv_", output_files)]
+
+output_fits <- lapply(output_fit_files, readRDS)
+output_cvs <- lapply(output_cv_files, readRDS)
+
+length(output_cv_files)
+
 
 cv_details <- readRDS("../../data/created/cv_objects/spatial.rds")
 table(cv_details$cv.id)
@@ -40,10 +48,7 @@ kable <- function(x, digits = 2, ...) {
                  ...)
 }
 
-sd(obs$pm25)
-summary(obs$pm25)
-
-cv_out <- lapply(output, 
+cv_out <- lapply(output_cvs, 
                  function(x) {
                      cv_fit <- x$ctm_fit_cv 
                      cv_fit <- cv_fit[!is.na(cv_fit$estimate), ]
@@ -69,17 +74,31 @@ cv_out <- lapply(output,
                                   paste0(cv_type_spec, " (", buff_size, "km)"), 
                                   cv_type_spec)) 
 
+others_out <- lapply(output_fits, 
+                 function(x) {
+                     cv_fit <- x$ctm_fit$others
+                     cv_fit$matern_nu <- x$matern.nu
+                     cv_fit$cv_type <- x$cv
+                     cv_fit$time_fit <- x$time_fit['elapsed'] / 60^2
+                     cv_fit$iter <- 1:nrow(cv_fit)
+                     return(cv_fit)
+                    }
+                 ) |>
+    (\(.) Reduce(rbind, .))()
+
 cv_out <- merge(cv_out, 
                obs[, c("longitude", "latitude", "space_id", "time_id")],
                by.x = c("space_id", "time_id"),
                by.y = c("space_id", "time_id"),
                all.x = TRUE)
+
+
+
 test <- cv_out |>
     filter(cv_type_spec == 'Spatial',
            matern_nu == 0.5)
 
 hist(test$estimate)
-test$estimate
 
 test |>
     mutate(model = paste0(cv_type_spec, " - ", matern_nu)) |>
@@ -113,7 +132,6 @@ cv_out |>
                                  escape = F) |>
     writeLines(paste0(save_dir, "cv_rmse.tex"))
 
-sd(obs$pm_aqs)
 
 #cv RMSE by monmth
 cv_out |>
@@ -183,18 +201,6 @@ cv_out |>
     geom_point(aes(color = estimate))
 
 
-
-others_out <- lapply(output, 
-                 function(x) {
-                     cv_fit <- x$ctm_fit$others
-                     cv_fit$matern_nu <- x$matern.nu
-                     cv_fit$cv_type <- x$cv
-                     cv_fit$time_fit <- x$time_fit['elapsed'] / 60^2
-                     cv_fit$iter <- 1:nrow(cv_fit)
-                     return(cv_fit)
-                    }
-                 ) |>
-    (\(.) Reduce(rbind, .))()
 
 others_out |>
     ggplot(aes(x = iter, y = theta.alpha)) + 
@@ -781,6 +787,8 @@ library(tidyverse)
 preds_est <- readRDS("../../output/results/preds/preds.RDS")
 
 preds <- readRDS("../../data/created/preds.rds")
+nrow(preds_est)
+nrow(preds)
 sum(preds_est$space.id != preds$space_id)
 sum(preds_est$time.id != preds$time_id)
 sum(preds_est$spacetime.id != preds$spacetime_id)
@@ -992,7 +1000,8 @@ ggsave(paste0(save_dir, "pred_map_small_20180728_alpha_space.png"),
        dpi = 600,
        width = 4, 
        height = 4)
-
+nrow(preds_one_day_small[is.na(preds_one_day_small$beta_space), c("longitude", "latitude")])
+nrow(obs_one_day_small[, c("longitude", "latitude")])
 pred_map_small_20180708_beta_space <- preds_one_day_small |>
   ggplot() +
   geom_point(aes(x = longitude, 
