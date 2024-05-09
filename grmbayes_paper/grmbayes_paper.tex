@@ -1,0 +1,47 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{biblatex}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{adjustbox}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{caption}
+
+\addbibresource{references.bib}
+
+\newcommand{\bs}{\boldsymbol}
+\newcommand{\bl}{\mathbf}
+
+
+
+
+\newif\ifwhole
+\wholetrue  % uncomment to compile whole document
+%\wholefalse  % uncomment to compile individual files
+
+\title{Bias-Correcting Daily Satellite-Retrieved AOD For Air Quality Research}
+\author{Wyatt G.\relax ~Madden\textsuperscript{$\dagger$}, Yang\relax ~Liu\textsuperscript{$\ddagger$}, Howard H.\relax ~Chang\textsuperscript{$\dagger$}}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\ifwhole
+  \input{sections/introduction.tex}
+  \input{sections/methods.tex}
+  \input{sections/results.tex}
+
+\else
+  \include{sections/results.tex}
+\fi
+
+
+
+\printbibliography
+
+\end{document}
+

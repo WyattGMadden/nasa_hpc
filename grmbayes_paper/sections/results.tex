@@ -1,0 +1,61 @@
+
+\section*{Results}
+
+
+We provide two case studies using the proposed method and $\texttt{grmbayes}$ R package.
+The first case study employes $pm_{2.5}$ data collected from 206 monitoring sites in California and Oregon on every day of 2018 and matched AOD data, in addition to land use and meteorological covariates.
+The second case study employes $pm_{2.5}$ data collected from 973 monitoring sites across the US on every day of 2018 and matched CTM data. 
+No covariates are included however different sets of spatial random effects are estimated for each month.
+
+For both case studies we calculate 10-fold cross validation root mean squared error (RMSE) for all combinations of three Mat\'{e}rn covariance $\nu$ parameters ($\nu \in {\frac{1}{2}, \frac{3}{2}, \frac{5}{2}}$), and five cross validation schemes (ordinary, spatial, spatial clustered, and spatial buffered with buffer lengths corresponding to $0.7$ and $0.3$ spatial correlation). 
+Initial parameter settings, tuning parameters, and spatial correlation lengths are determined through an initial fit assuming Mat\'{e}rn $\nu$ set to $\frac{1}{2}$.
+
+
+\subsection*{Case Study 1: California and Oregon}
+
+%Table~\ref{tab:carmse} 
+%Figure~\ref{fig:histogram})
+
+
+    \begin{center}
+        \captionof{table}{California and Oregon $pm_{2.5}$ RMSE by Mat\'{e}rn $\nu$ parameter and cross-validation scheme.}\label{tab:carmse}
+        \input{../../nasa_hpc/ca_1km_w_cov/output/figures/cv_rmse.tex}
+    \end{center}
+
+    \begin{center}
+        \captionof{table}{California and Oregon $pm_{2.5}$ RMSE by Mat\'{e}rn $\nu$ parameter and cross-validation scheme.}\label{tab:monobs}
+        \resizebox{\textwidth}{!}{
+            \input{../../nasa_hpc/ca_1km_w_cov/output/figures/cv_rmse_by_month.tex}
+    }
+    \end{center}
+
+    \begin{center}
+        \captionof{table}{California and Oregon $pm_{2.5}$ RMSE by Mat\'{e}rn $\nu$ parameter and cross-validation scheme.}\label{tab:monobs}
+        \input{../../nasa_hpc/ca_1km_w_cov/output/figures/obs_monthly_stats.tex}
+    \end{center}
+
+
+\subsection*{Case Study 2: All United States}
+
+    \begin{center}
+        \captionof{table}{California and Oregon $pm_{2.5}$ RMSE by Mat\'{e}rn $\nu$ parameter and cross-validation scheme.}\label{tab:carmse}
+        \input{../../nasa_hpc/ca_1km_w_cov/output/figures/cv_rmse.tex}
+    \end{center}
+
+    \begin{center}
+        \captionof{table}{California and Oregon $pm_{2.5}$ RMSE by Mat\'{e}rn $\nu$ parameter and cross-validation scheme.}\label{tab:monobs}
+        \resizebox{\textwidth}{!}{
+            \input{../../nasa_hpc/ca_1km_w_cov/output/figures/cv_rmse_by_month.tex}
+    }
+    \end{center}
+
+    \begin{center}
+        \captionof{table}{California and Oregon $pm_{2.5}$ RMSE by Mat\'{e}rn $\nu$ parameter and cross-validation scheme.}\label{tab:monobs}
+        \input{../../nasa_hpc/ca_1km_w_cov/output/figures/obs_monthly_stats.tex}
+    \end{center}
+
+
+
+
+
+

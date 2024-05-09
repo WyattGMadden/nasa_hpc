@@ -1,0 +1,143 @@
+
+\section*{Methods}
+
+\subsection*{Model}
+
+The geostatistical regression model is formulated as a spatial-temporal regression of $Y = pm_{2.5}$ against $X$, which is either AOD or CTM depending on user input. 
+
+The statistical model is as follows:
+
+\begin{align*} 
+    pm_{2.5}(s,t) = \alpha(s, t) + \beta(s, t) X(s, t) + \mathbf{l}(s)' \bs{\gamma} +  \mathbf{m}(s, t)' \boldsymbol{\delta} + \epsilon(s, t)
+\end{align*}
+         
+where $\alpha_0(s, t)$ and $\beta(s, t)$ are the intercept and AOD/CTM slope of the regression model at location $s$ and time $t$, $\bs{\gamma}$ and $\bs{\delta}$ are fixed effects for spatial and spatio-temporal covariates $\mathbf{l}(s)$ and $\mathbf{m}(s, t)$ respectively, and $\bs{\epsilon}(s, t) \sim N(0, \sigma^2)$. 
+
+The slope and intercept parameters are composed of the following spatial and temporal random effects and fixed effects:
+
+\begin{align*}
+    \alpha(s, t) = \alpha_0 + \alpha(s) + \alpha(t) \\
+    \beta(s, t) = \beta_0 + \beta(s) + \beta(t) \\
+\end{align*} 
+
+where spatial random effects $\bs{\alpha}(\bl{s}), \bs{\beta}(\bl{s}) \sim SP(\bl{0}, \tau^2 \bl{K}(\theta, d))$ for a user specified stochastic process $SP$ and kernal $\bl{K}$ that depends on range parameter $\theta$ and distance $d$, temporal random effects $\bs{\alpha}(\bl{t}), \bs{\beta}(\bl{t})$ assumed first-order random walk.
+ Normal priors are applied to fixed effects $\bs{\gamma}$ and $\bs{\delta}$ with equivalence to a ridge regression shrinkage term. 
+
+Users can specify inclusion of any combination of additive or multiplicative spatial or temporal random effects, as well as input $\bl{L}$ and $\bl{M}$ matrices for fixed effects.
+For example, if the user-specifies inclusion of an additive spatial effect, a multiplicative temporal effect, and no $\bl{L}$ and $\bl{M}$ matrices, the intercept/slope equations would simplify as follows:
+
+\begin{align*}
+    \alpha(s, t) =& \alpha_0 + \alpha(s)\\
+    \beta(s, t) =& \beta_0 + \beta(t) \\
+\end{align*} 
+
+
+
+\subsection*{Spatial Random Effects}
+
+The spatial random effects are modeled as either a Gaussian Process (GP) or Nearest Neighbor Gaussian Process (NNGP) as specified by user input. 
+The NNGP is a stochastic process that assumes the joint distribution of spatial effects can be decomposed into conditional distributions that depend only on a specified number of nearest neighbors. 
+This allows for the covariance kernal to be inverted in $\mathcal{O}(n m^3)$ time, where $n$ is the number of spatial effects and $m$ is the number of neighbors, as opposed to $\mathcal{O}(n^3)$ for a regular GP.
+The NNGP approximates a GP when the number of neighbors is sufficiently large (citation for specific $m$), and often results in similar estimates and predictive performance. 
+
+We provide four covariance kernals for the spatial random effects which are available for both GP and NNGP specifications: exponential, and Mat\'{e}rn for $\nu \in {\frac{1}{2}, \frac{3}{2}, \frac{5}{2}}$, where:
+\begin{align*}
+    \bs{K}_{exp} =& \exp \left( - \frac{d}{\theta} \right) \\
+    \bs{K}_{mat} =& \frac{1}{\Gamma(\nu) 2^{\nu - 1}} \left( \frac{\sqrt{2 \nu}}{\theta} d \right)^{\nu} K_{\nu} \left( \frac{\sqrt{2 \nu}}{\theta} d \right) \\
+\end{align*} 
+
+We also allow for the user to specify a custom covariance kernal, which must be positive definite and symmetric and specified with respect to the range parameter $\theta$ and distance $d$ such that $\bl{K}_{user} = f(\theta, d)$. 
+
+Another method for improving computational efficiency is to discretize the range parameters $\theta_{\alpha}$ and $\theta_{\beta}$, allowing for pre-computation of kernal inverses that are recycled at each MCMC iteration.
+Users can inpute discrete values for each range parameter, as well as specify the MCMC step for the range parameter as either Metropolis-Hastings (MH) or Gibbs. 
+The MH step requires the computation of two likelihoods (with respect to both the current and the proposal $\theta$) at each iteration, as opposed to Gibbs which requires computation of a likelihood for every discrete $\theta$ value for each iteration. 
+However MH may result in poorer mixing, thus requiring more iterations to converge.
+
+Finally, while spatio-temporal effects are not currently implemented, we do provide the option to use different sets of spatial effects for different time periods. 
+By using different spatial effects for say seasons, or months, some temporal variation in spatial effects can be accounted for.
+Regardless of number of spatial effect sets, spatial stochastic process parameters ($\tau^2$, $\theta$) are shared across sets. 
+For example, if spatial-time sets are specified for seasons, the additive spatial random effect is specified as follows:
+\[
+    [\bs{\alpha}_n(\bl{s}_{spr}), 
+        \bs{\alpha}_n(\bl{s}_{sum}),
+        \bs{\alpha}_n(\bl{s}_{fal}),
+        \bs{\alpha}_n(\bl{s}_{win})]' \sim SP(\bl{1}_4 \otimes \bl{0}_n, \tau^2 \bl{I}_{4,4} \otimes \bl{K}(\theta, d)_{n,n})
+\]
+where there are $n$ spatial locations and $\otimes$ is the Kronecker product.
+
+\subsection*{Temporal Random Effects}
+
+The first-order random walk temporal random effects ($\bs{\alpha}(\bl{t}), \bs{\beta}(\bl{t})$) are specified such that,
+
+\begin{align*}
+    E[\alpha(t)] =& 
+    \begin{cases} 
+        \rho_{\alpha} \alpha(t+1) & \text{if } t = 1 \\ 
+        \rho_{\alpha} \frac{\alpha(t-1) + \alpha(t+1)}{2} & \text{if } 1 < t < T \\
+        \rho_{\alpha} \alpha(t-1) & \text{if } t = T \\
+    \end{cases} \\
+\end{align*}
+
+\begin{align*}
+    Var[\alpha(t)] =& 
+    \begin{cases} 
+        \omega^2_{\alpha} & \text{if } t = 1 \\
+        \frac{\omega^2_{\alpha}}{2} & \text{if } 1 < t < T \\
+        \omega^2_{\alpha} & \text{if } t = T
+    \end{cases} \\
+\end{align*}
+
+with $\bs{\beta}(\bl{t})$ similarly specified. 
+Here each $\rho$ is discretized as $2,000$ evenly spaced values between $0$ and $1$, and each $\omega$ determines the temporal smoothness level. 
+
+\subsection*{Fixed Effects}
+
+
+\subsection*{Cross-Validation}
+
+We provide functions to perform k-fold cross-validation with the geostatistical regression model.
+K-fold cross-validation prevents overfitting by separating the data set into k number of folds, iteratively fitting the model to k-1 folds and predicting the remaining fold. (INCLUDE citation)
+The user can specify the number of folds, the type of cross-validation to perform, and any related parameters for the type of cross-validation specified.
+We provide the following types of cross-validation:
+
+\begin{itemize}
+  \item \textbf{Ordinary}: Folds are randomly assigned across all observations
+  \item \textbf{Spatial}: Folds are randomly assigned across all spatial locations. 
+  \item \textbf{Spatial Clustered}: K spatial clusters are estimated using k-means clustering on spatial locations. These clusters determine the folds. 
+  \item \textbf{Spatial buffered}: Folds are randomly assigned across all spatial locations. For each fold, observations are removed from the training set if they are within a user-specified distance from the nearest test set point. 
+\end{itemize}
+
+When assigning folds we ensure that each fold contains at least one observation from each spatial location.
+If there are fewer observations than folds for a given spatial location we leave data from this location unassigned. 
+Data from the first and last time point are also unassigned (INCLUDE why?).
+Predictions are output as missing for unassigned data.
+
+INCLUDE figure detailing cv types
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
