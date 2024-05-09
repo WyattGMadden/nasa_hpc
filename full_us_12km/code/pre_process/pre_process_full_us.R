@@ -24,11 +24,13 @@ offending_space_ids <- sub("-.*$", "", not_present)
 obs <- obs[!(obs$space_id %in% as.integer(offending_space_ids)), ]
 
 
-#remove space ids with less than 50 observations, for cv purposes
-space_counts <- table(obs$space_id)
-offending_space_ids <- space_counts[space_counts < 50] |>
-    names() |>
-    as.integer()
+#all space ids need to occur within each spactime for grmfit
+#remove space ids that have suffient observations within each spacetime
+space_counts <- table(obs$space_id, obs$spacetime_id)
+
+#identify space ids with less than 10 obs in at least one spacetime
+offending_space_ids <- rownames(space_counts)[apply(space_counts < 10, 1, max) > 0]
+
 obs <- obs[!(obs$space_id %in% offending_space_ids), ]
 
 obs$space_id <- as.numeric(as.factor(obs$aqs_site_id))
