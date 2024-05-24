@@ -30,12 +30,11 @@ output_cv_files <- output_files[grepl("cv_", output_files)]
 output_fits <- lapply(output_fit_files, readRDS)
 output_cvs <- lapply(output_cv_files, readRDS)
 
-length(output_cv_files)
-
-
 cv_details <- readRDS("../../data/created/cv_objects/spatial.rds")
-table(cv_details$cv.id)
 
+buffer_params <- read_csv("../../data/created/buffer_params.csv") |>
+    select(-1) |>
+    mutate(distance = as.character(floor(distance)))
 
 
 kable <- function(x, digits = 2, ...) {
@@ -47,6 +46,7 @@ kable <- function(x, digits = 2, ...) {
                  linesep = "\\\\[-3.0ex]",
                  ...)
 }
+
 
 cv_out <- lapply(output_cvs, 
                  function(x) {
@@ -63,16 +63,20 @@ cv_out <- lapply(output_cvs,
               by = c('time_id', 'space_id')) |>
     mutate(buff_size = stringr::str_extract(cv_type, "\\d+"),
            buff_size = as.integer(buff_size),
-           buff_size = if_else(is.na(buff_size), "", as.character(buff_size)),
-           cv_type_spec = substr(cv_type, 1, 9),
+           buff_size = if_else(is.na(buff_size), "", as.character(buff_size))) |>
+    left_join(buffer_params, by = c("matern_nu" = "nu",
+                                    "buff_size" = "distance")) |>
+    mutate(cv_type_spec = substr(cv_type, 1, 9),
            cv_type_spec = case_when(
                cv_type_spec == 'ordinary' ~ 'Ordinary',
                cv_type_spec == 'spatial' ~ 'Spatial',
                cv_type_spec == 'spatial_c' ~ 'Spatial Clustered',
                cv_type_spec == 'spatial_b' ~ 'Spatial Buffered'),
            cv_type_spec = if_else(cv_type_spec == 'Spatial Buffered',
-                                  paste0(cv_type_spec, " (", buff_size, "km)"), 
-                                  cv_type_spec)) 
+                                  paste0(cv_type_spec, " (", corr, " Corr)"), 
+                                  cv_type_spec))
+
+rm(output_cvs)
 
 others_out <- lapply(output_fits, 
                  function(x) {
@@ -84,7 +88,23 @@ others_out <- lapply(output_fits,
                      return(cv_fit)
                     }
                  ) |>
-    (\(.) Reduce(rbind, .))()
+    (\(.) Reduce(rbind, .))() |>
+    mutate(buff_size = stringr::str_extract(cv_type, "\\d+"),
+           buff_size = as.integer(buff_size),
+           buff_size = if_else(is.na(buff_size), "", as.character(buff_size))) |>
+    left_join(buffer_params, by = c("matern_nu" = "nu",
+                                    "buff_size" = "distance")) |>
+    mutate(cv_type_spec = substr(cv_type, 1, 9),
+           cv_type_spec = case_when(
+               cv_type_spec == 'ordinary' ~ 'Ordinary',
+               cv_type_spec == 'spatial' ~ 'Spatial',
+               cv_type_spec == 'spatial_c' ~ 'Spatial Clustered',
+               cv_type_spec == 'spatial_b' ~ 'Spatial Buffered'),
+           cv_type_spec = if_else(cv_type_spec == 'Spatial Buffered',
+                                  paste0(cv_type_spec, " (", corr, " Corr)"), 
+                                  cv_type_spec))
+
+rm(output_fits)
 
 cv_out <- merge(cv_out, 
                obs[, c("longitude", "latitude", "space_id", "time_id")],
@@ -94,11 +114,6 @@ cv_out <- merge(cv_out,
 
 
 
-test <- cv_out |>
-    filter(cv_type_spec == 'Spatial',
-           matern_nu == 0.5)
-
-hist(test$estimate)
 
 test |>
     mutate(model = paste0(cv_type_spec, " - ", matern_nu)) |>
@@ -205,7 +220,7 @@ cv_out |>
 others_out |>
     ggplot(aes(x = iter, y = theta.alpha)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type) +
+    facet_grid(matern_nu ~ cv_type_spec) +
     labs(x = "Iteration", 
          y = expression(theta[alpha]), 
          title = "Trace Plot of " ~ theta[alpha],
@@ -215,7 +230,7 @@ ggsave(paste0(save_dir, "theta_alpha_trace.png"), width = 12, height = 6)
 others_out |>
     ggplot(aes(x = iter, y = theta.beta)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type) +
+    facet_grid(matern_nu ~ cv_type_spec) +
     labs(x = "Iteration", 
          y = expression(theta[alpha]), 
          title = "Trace Plot of " ~ theta[beta],
@@ -225,7 +240,7 @@ ggsave(paste0(save_dir, "theta_beta_trace.png"), width = 12, height = 6)
 others_out |>
     ggplot(aes(x = iter, y = tau.alpha)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type, scales = "free") +
+    facet_grid(matern_nu ~ cv_type_spec, scales = "free") +
     labs(x = "Iteration", 
          y = expression(tau[alpha]), 
          title = "Trace Plot of " ~ tau[alpha],
@@ -235,7 +250,7 @@ ggsave(paste0(save_dir, "tau_alpha_trace.png"), width = 12, height = 6)
 others_out |>
     ggplot(aes(x = iter, y = tau.beta)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type, scales = "free") +
+    facet_grid(matern_nu ~ cv_type_spec, scales = "free") +
     labs(x = "Iteration", 
          y = expression(tau[alpha]), 
          title = "Trace Plot of " ~ tau[beta],
@@ -245,7 +260,7 @@ ggsave(paste0(save_dir, "tau_beta_trace.png"), width = 12, height = 6)
 others_out |>
     ggplot(aes(x = iter, y = alpha0)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type, scales = "free") +
+    facet_grid(matern_nu ~ cv_type_spec, scales = "free") +
     labs(x = "Iteration", 
          y = expression(alpha[0]), 
          title = "Trace Plot of " ~ alpha[0],
@@ -255,7 +270,7 @@ ggsave(paste0(save_dir, "alpha0_trace.png"), width = 12, height = 6)
 others_out |>
     ggplot(aes(x = iter, y = beta0)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type, scales = "free") +
+    facet_grid(matern_nu ~ cv_type_spec, scales = "free") +
     labs(x = "Iteration", 
          y = expression(beta[0]), 
          title = "Trace Plot of " ~ beta[0],
@@ -266,12 +281,12 @@ others_out |>
     ggplot(aes(x = iter)) + 
     geom_line(aes(y = alpha0), colour = "blue") +
     geom_line(aes(y = beta0), colour = "red") +
-    facet_grid(matern_nu ~ cv_type, scales = "free")
+    facet_grid(matern_nu ~ cv_type_spec, scales = "free")
 
 others_out |>
     ggplot(aes(x = iter, y = sigma2)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type, scales = "free") +
+    facet_grid(matern_nu ~ cv_type_spec, scales = "free") +
     labs(x = "Iteration", 
          y = expression(sigma^2), 
          title = "Trace Plot of " ~ sigma^2,
@@ -281,7 +296,7 @@ ggsave(paste0(save_dir, "sigma2_trace.png"), width = 12, height = 6)
 others_out |>
     ggplot(aes(x = iter, y = rho.alpha)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type, scales = "free") +
+    facet_grid(matern_nu ~ cv_type_spec, scales = "free") +
     labs(x = "Iteration", 
          y = expression(rho[alpha]), 
          title = "Trace Plot of " ~ rho[alpha],
@@ -291,7 +306,7 @@ ggsave(paste0(save_dir, "rho_alpha_trace.png"), width = 12, height = 6)
 others_out |>
     ggplot(aes(x = iter, y = rho.beta)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type, scales = "free") +
+    facet_grid(matern_nu ~ cv_type_spec, scales = "free") +
     labs(x = "Iteration", 
          y = expression(rho[alpha]), 
          title = "Trace Plot of " ~ rho[beta],
@@ -301,7 +316,7 @@ ggsave(paste0(save_dir, "rho_beta_trace.png"), width = 12, height = 6)
 others_out |>
     ggplot(aes(x = iter, y = omega.alpha)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type, scales = "free") +
+    facet_grid(matern_nu ~ cv_type_spec, scales = "free") +
     labs(x = "Iteration", 
          y = expression(omega[alpha]), 
          title = "Trace Plot of " ~ omega[alpha],
@@ -311,7 +326,7 @@ ggsave(paste0(save_dir, "omega_alpha_trace.png"), width = 12, height = 6)
 others_out |>
     ggplot(aes(x = iter, y = omega.beta)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type, scales = "free") +
+    facet_grid(matern_nu ~ cv_type_spec, scales = "free") +
     labs(x = "Iteration", 
          y = expression(omega[beta]), 
          title = "Trace Plot of " ~ omega[beta],
@@ -321,7 +336,7 @@ ggsave(paste0(save_dir, "omega_beta_trace.png"), width = 12, height = 6)
 others_out |>
     ggplot(aes(x = iter, y = lambda.gamma)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type, scales = "free") +
+    facet_grid(matern_nu ~ cv_type_spec, scales = "free") +
     labs(x = "Iteration", 
          y = expression(lambda[gamma]), 
          title = "Trace Plot of " ~ lambda[gamma],
@@ -331,7 +346,7 @@ ggsave(paste0(save_dir, "lambda_gamma_trace.png"), width = 12, height = 6)
 others_out |>
     ggplot(aes(x = iter, y = lambda.delta)) + 
     geom_line() +
-    facet_grid(matern_nu ~ cv_type, scales = "free") +
+    facet_grid(matern_nu ~ cv_type_spec, scales = "free") +
     labs(x = "Iteration", 
          y = expression(lambda[delta]), 
          title = "Trace Plot of " ~ lambda[delta],
@@ -340,8 +355,8 @@ ggsave(paste0(save_dir, "lambda_delta_trace.png"), width = 12, height = 6)
 
 
 others_out |>
-    distinct(matern_nu, cv_type, time_fit) |>
-    ggplot(aes(x = paste(cv_type, matern_nu, sep = " - "), y = time_fit)) +
+    distinct(matern_nu, cv_type_spec, time_fit) |>
+    ggplot(aes(x = paste(cv_type_spec, matern_nu, sep = " - "), y = time_fit)) +
     geom_bar(stat = 'identity') +
     labs(x = "Model", 
          y = "Time (hours)", 
@@ -594,8 +609,8 @@ tibble(km = seq(1, 500, 1)) |>
                  values_to = 'value') |>
     ggplot() +
     geom_line(aes(x = km, y = value, color = theta)) +
-    geom_hline(yintercept = 0.8, linetype = 'dashed') +
-    geom_hline(yintercept = 0.5, linetype = 'dashed') +
+    geom_hline(yintercept = 0.7, linetype = 'dashed') +
+    geom_hline(yintercept = 0.3, linetype = 'dashed') +
     labs(x = "Distance (km)", 
          y = "Correlation", 
          color = "Theta",
@@ -616,6 +631,17 @@ corr_by_dist_inv(0.5, med_theta_beta)
 ########################################################
 library(grmbayes)
 library(tidyverse)
+# Get world map data and filter for the U.S.
+us_map <- map_data("world") |>
+  filter(region == "USA") |>
+  filter(!(lat > 49 | lat < 24 | long < -125 | long > -66))
+
+ca_map <- map_data("state") %>%
+  filter(region == "california")
+or_map <- map_data("state") %>%
+  filter(region == "oregon")
+
+
 fit_dat <- readRDS("../../output/results/fits/fit_0.5_ordinary.RDS")
 alpha_space <- fit_dat$ctm_fit$alpha.space
 alpha_space$mean_alpha_space <- rowMeans(alpha_space[, 3:ncol(alpha_space)])
@@ -624,7 +650,6 @@ beta_space <- fit_dat$ctm_fit$beta.space
 beta_space$mean_beta_space <- rowMeans(beta_space[, 3:ncol(beta_space)])
 beta_space <- beta_space[, c("space.id", "spacetime.id", "mean_beta_space")]
 
-obs                     
 obs_loc <- unique(obs[, c("space_id", "latitude", "longitude", "x", "y")])
 
 
@@ -684,6 +709,18 @@ ggsave(paste0(save_dir, "alpha_space_est_map_small_20181008.png"),
 
 pred_map <- alpha_space |>
   ggplot() +
+   geom_polygon(data = ca_map, 
+                aes(x = long, 
+                    y = lat, 
+                    group = group), 
+                fill = NA, 
+                color = "black") +
+   geom_polygon(data = or_map, 
+                aes(x = long, 
+                    y = lat, 
+                    group = group), 
+                fill = NA, 
+                color = "black") +
   geom_point(aes(x = longitude, 
                  y = latitude, 
                  color = mean_alpha_space)) +
@@ -747,8 +784,20 @@ ggsave(paste0(save_dir, "beta_space_est_map_small_20181008.png"),
 
 pred_map <- beta_space |>
   ggplot() +
-  geom_point(aes(x = x, 
-                 y = y, 
+   geom_polygon(data = ca_map, 
+                aes(x = long, 
+                    y = lat, 
+                    group = group), 
+                fill = NA, 
+                color = "black") +
+   geom_polygon(data = or_map, 
+                aes(x = long, 
+                    y = lat, 
+                    group = group), 
+                fill = NA, 
+                color = "black") +
+  geom_point(aes(x = longitude,
+                 y = latitude,
                  color = mean_beta_space)) +
   scale_colour_viridis_c(
     guide = guide_colorbar(
@@ -786,12 +835,16 @@ library(tidyverse)
 
 preds_est <- readRDS("../../output/results/preds/preds.RDS")
 
+preds_est2 <- readRDS("../../../full_us_12km/output/results/preds/preds.RDS")
+
+
 preds <- readRDS("../../data/created/preds.rds")
-nrow(preds_est)
-nrow(preds)
+
 sum(preds_est$space.id != preds$space_id)
 sum(preds_est$time.id != preds$time_id)
 sum(preds_est$spacetime.id != preds$spacetime_id)
+
+
 preds$estimate <- preds_est$estimate
 preds$sd <- preds_est$sd
 preds$alpha_time <- preds_est$alpha_time
@@ -804,19 +857,14 @@ preds <- merge(preds,
                sort = F,
                all.x = TRUE)
 
-preds_est$alpha_space
-
-
-
-
 
 
 preds_tmp <- preds |>
     filter(date == '2018-07-08',
-           x > -10950000,
-           x < -10850000,
-           y > 3750000,
-           y < 3850000) 
+           x > -10950,
+           x < -10850,
+           y > 3750,
+           y < 3850) 
 
 cov_names <- c("elevation", "population",
                "cloud", "v_wind",
@@ -959,9 +1007,6 @@ ggsave(paste0(save_dir, "pred_map_small_20180728.png"),
        width = 4, 
        height = 4)
 
-preds_one_day_small[is.na(preds_one_day_small$alpha_space), c("longitude", "latitude")]
-obs_one_day_small[, c("longitude", "latitude")]
-nrow(obs_one_day_small)
 pred_map_small_20180708_alpha_space <- preds_one_day_small |>
   ggplot() +
   geom_point(aes(x = longitude, 
@@ -1000,8 +1045,7 @@ ggsave(paste0(save_dir, "pred_map_small_20180728_alpha_space.png"),
        dpi = 600,
        width = 4, 
        height = 4)
-nrow(preds_one_day_small[is.na(preds_one_day_small$beta_space), c("longitude", "latitude")])
-nrow(obs_one_day_small[, c("longitude", "latitude")])
+
 pred_map_small_20180708_beta_space <- preds_one_day_small |>
   ggplot() +
   geom_point(aes(x = longitude, 
@@ -1042,31 +1086,24 @@ ggsave(paste0(save_dir, "pred_map_small_20180728_beta_space.png"),
        height = 4)
 
 
-table(obs$date)
-obs
 
+
+#Overall Posterior Mean
 preds |>
-    filter(date %in% c('2018-07-08', '2018-07-28')) |>
-    filter(space_id == 5000) |>
-    select(estimate)
-
-           
-
-
-ctm |>
-  filter(date == '2018-10-08') |>
+  group_by(space_id, spacetime_id, latitude, longitude) |>
+  summarize(estimate = mean(estimate, na.rm = T)) |>
   ggplot() +
-  geom_point(aes(x = grid_lon.y, 
-                 y = grid_lat.y,
-                 color = pm25_tot_ncar),
+  geom_point(aes(x = longitude, 
+                 y = latitude, 
+                 color = estimate),
              shape = 15,
              size = 0.8) +
   scale_colour_viridis_c(
     guide = guide_colorbar(
-      barwidth = 0.5, 
-      barheight = 4,
-      title.theme = element_text(size = 8),
-      label.theme = element_text(size = 6)
+      barwidth = 0.25, 
+      barheight = 2,
+      title.theme = element_text(size = 4),
+      label.theme = element_text(size = 3)
     )) +
   labs(x = "Longitude", 
        y = "Latitude", 
@@ -1081,10 +1118,9 @@ ctm |>
     legend.key.size = unit(0.8, "cm")
   )
 
-ggsave(paste0(save_dir, "ctm_map_20181008.png"), width = 8, height = 5)
+ggsave(paste0(save_dir, "pred_map_overall_posterior_mean.png"), width = 8, height = 5)
 
 
-sum(is.na(ctm_pred$estimate))
 #posterior means by season map
 preds |>
   mutate(month = as.numeric(format(date, "%m")),
