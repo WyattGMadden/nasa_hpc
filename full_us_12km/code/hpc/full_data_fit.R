@@ -2,8 +2,8 @@ full_us_fit <- function(matern.nu, cv) {
 	print(matern.nu)
 	print(cv)
 
-    obs_full_us <- readRDS("../../data/created/obs.rds")
-    cv_object <- readRDS(paste0("../../data/created/cv_objects/", cv, ".rds"))
+    obs_full_us <- readRDS("~/../../projects/hhchang/wmadden/nasa_hpc/full_us_12km/data/created/obs.rds")
+    cv_object <- readRDS(paste0("~/../../projects/hhchang/wmadden/nasa_hpc/full_us_12km/data/created/cv_objects/", cv, ".rds"))
 
     n_iter <- 10000
     burn <- 2000
@@ -46,10 +46,9 @@ full_us_fit <- function(matern.nu, cv) {
     output <- list(ctm_fit = ctm_fit, 
                    matern.nu = matern.nu,
                    cv = cv,
-                   time_fit = time_fit,
-                   time_fit_cv = time_fit_cv)
+                   time_fit = time_fit)
     saveRDS(output, 
-            paste0("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/output/results/fits/fit_",
+            paste0("~/../../projects/hhchang/wmadden/nasa_hpc/full_us_12km/output/results/fits/fit_",
                    matern.nu,
                    "_", 
                    cv, 
@@ -63,8 +62,8 @@ full_us_cv <- function(matern.nu, cv, fit.i) {
 	print("fit #")
 	print(fit.i)
 
-    obs_full_us <- readRDS("../../data/created/obs.rds")
-    cv_object <- readRDS(paste0("../../data/created/cv_objects/", cv, ".rds"))
+    obs_full_us <- readRDS("~/../../projects/hhchang/wmadden/nasa_hpc/full_us_12km/data/created/obs.rds")
+    cv_object <- readRDS(paste0("~/../../projects/hhchang/wmadden/nasa_hpc/full_us_12km/data/created/cv_objects/", cv, ".rds"))
 
     n_iter <- 10000
     burn <- 2000
@@ -106,16 +105,17 @@ full_us_cv <- function(matern.nu, cv, fit.i) {
     })
 
 
-    output <- list(ctm_fit = ctm_fit, 
-                   ctm_fit_cv = ctm_fit_cv, 
+    output <- list(ctm_fit_cv = ctm_fit_cv, 
                    matern.nu = matern.nu,
                    cv = cv,
-                   time_fit = time_fit,
-                   time_fit_cv = time_fit_cv)
+                   time_fit_cv = time_fit_cv,
+                   fit.i = fit.i)
     saveRDS(output, 
-            paste0("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/output/results/fits/cv_",
+            paste0("~/../../projects/hhchang/wmadden/nasa_hpc/full_us_12km/output/results/fits/cv_",
                    matern.nu,
                    "_", 
                    cv, 
+                   "_",
+                   fit.i,
                    ".RDS"))
 }

@@ -1,17 +1,12 @@
 full_preds <- function() {
 
     #best rmse matern.nu
-    fit <- readRDS("../../output/results/fits/fit_0.5_ordinary.RDS")$ctm_fit
-    names(fit)
-    fit$alpha.space |> rowMeans()
+    fit <- readRDS("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/output/results/fits/fit_0.5_ordinary.RDS")$ctm_fit
 
     obs <- readRDS("../../data/created/obs.rds")
     pred_dat <- readRDS("../../data/created/preds.rds")
     names(pred_dat)
 
-    dist(unique(pred_dat[1:100, c("x", "y")])) |> summary()
-    dist(unique(obs[sample(1:nrow(obs), 1000), c("x", "y")])) |> summary()
-    head(pred_dat)
 
     cat("start predictions \n")
 
@@ -34,7 +29,7 @@ full_preds <- function() {
     cat("save predictions \n")
 
     saveRDS(preds,
-            "../../output/results/preds/preds.RDS")
+            "~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/output/results/preds/preds.RDS")
 
     cat("job done \n")
 }

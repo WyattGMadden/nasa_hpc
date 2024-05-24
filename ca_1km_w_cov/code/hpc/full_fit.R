@@ -8,8 +8,13 @@ full_fit <- function(matern.nu, cv) {
     thin <- 4
 
 
-    discrete.theta.alpha.values <- seq(5, 75, 5)       
-    discrete.theta.beta.values <- seq(5, 75, 5)       
+    discrete.theta.alpha.values <- seq(5, 100, 5)       
+    discrete.theta.beta.values <- seq(5, 150, 5)       
+
+    if (matern.nu %in% c(1.5, 2.5)) {
+        discrete.theta.alpha.values <- discrete.theta.alpha.values / 2 
+        discrete.theta.beta.values <- discrete.theta.beta.values / 2
+    }
 
     time_fit <- system.time({
     ctm_fit <- grmbayes::grm(Y = obs$pm25,
@@ -46,6 +51,36 @@ full_fit <- function(matern.nu, cv) {
                              spacetime.id = obs$spacetime_id,
                              verbose.iter = 1000)
     })
+
+    output <- list(ctm_fit = ctm_fit, 
+                   matern.nu = matern.nu,
+                   cv = cv,
+                   time_fit = time_fit)
+    saveRDS(output, 
+            paste0("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/output/results/fits/fit_",
+                   matern.nu,
+                   "_", 
+                   cv, 
+                   ".RDS"))
+}
+full_cv <- function(matern.nu, cv, fit.i) {
+
+    obs <- readRDS("../../data/created/obs.rds")
+    cv_object <- readRDS(paste0("../../data/created/cv_objects/", cv, ".rds"))
+
+    n_iter <- 10000
+    burn <- 2000
+    thin <- 4
+
+
+    discrete.theta.alpha.values <- seq(5, 100, 5)       
+    discrete.theta.beta.values <- seq(5, 150, 5)       
+
+    if (matern.nu %in% c(1.5, 2.5)) {
+        discrete.theta.alpha.values <- discrete.theta.alpha.values / 2 
+        discrete.theta.beta.values <- discrete.theta.beta.values / 2
+    }
+
     time_fit_cv <- system.time({
     ctm_fit_cv <- grmbayes::grm_cv(Y = obs$pm25,
                                    L = obs[, c("elevation", "population")],
@@ -80,20 +115,22 @@ full_fit <- function(matern.nu, cv) {
                                    space.id = obs$space_id,
                                    time.id = obs$time_id,
                                    spacetime.id = obs$spacetime_id,
-                                   verbose.iter = 1000)
+                                   verbose.iter = 1000,
+                                   just.fit.i = fit.i)
     })
 
 
-    output <- list(ctm_fit = ctm_fit, 
-                   ctm_fit_cv = ctm_fit_cv, 
+    output <- list(ctm_fit_cv = ctm_fit_cv, 
                    matern.nu = matern.nu,
                    cv = cv,
-                   time_fit = time_fit,
-                   time_fit_cv = time_fit_cv)
+                   time_fit_cv = time_fit_cv,
+                   fit.i = fit.i)
     saveRDS(output, 
-            paste0("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/output/results/prelim_fits/fit_",
+            paste0("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/output/results/fits/cv_",
                    matern.nu,
                    "_", 
                    cv, 
+                   "_",
+                   fit.i,
                    ".RDS"))
 }
