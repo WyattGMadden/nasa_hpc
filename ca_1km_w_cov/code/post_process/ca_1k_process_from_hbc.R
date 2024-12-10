@@ -165,23 +165,6 @@ cv_out |>
     rename_at(vars(`1`:`12`), ~ month.abb) |>
     write.csv(paste0(save_dir, "cv_rmse_month.csv"), row.names = F)
 
-cv_out |>
-    mutate(cover = obs > lower_95 & obs < upper_95) |>
-    mutate(month = as.numeric(format(date, "%m"))) |>
-    group_by(matern_nu, cv_type_spec,  month) |>
-    summarise(rmse = sqrt(mean((estimate - obs)^2))) |>
-#              coverage = mean(cover),
-#              mean_sd = mean(sd),
-#              time = unique(time_fit_cv)) |>
-    ungroup() |>
-    pivot_wider(names_from = month, values_from = rmse) |>
-    rename(`Matern Nu` = matern_nu,
-           `CV Type` = cv_type_spec) |>
-#           `Time (hours)` = time) |>
-    rename_at(vars(`1`:`12`), ~ month.abb) |>
-    kable() |>
-    writeLines(paste0(save_dir, "cv_rmse_by_month.tex"))
-
 
 
 #cv prediction one day in october

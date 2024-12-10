@@ -1,0 +1,19 @@
+
+ensembleDownscaleR research note
+
+
+notes
+- made distance calculation more efficient
+
+Q's 
+
+- prediction data set contains locations equal to monitor locations, resulting in prediction NA's. change data, or change code?
+
+- issue in ensemble fit
+    - currently are dropping spatial locations with num.obs < num.cv.folds for cv fit.
+        need to account for this in matching scheme for ensemble fit code
+    - quick fix would be to fillter out monitors with insuffient obs, but need to think of downstream effects later and maybe add warning
+        - added error in grm_cv - does not permit number of obs within each space id < cv fold number
+    - this is actually an issue even for temporal NA padding, because there aren't equal number of pad NA's between aod and cmaq    
+        -fixed this 
+

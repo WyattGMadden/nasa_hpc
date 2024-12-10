@@ -7,7 +7,7 @@ obs$x <- obs$cen_x / 1e3
 obs$y <- obs$cen_y / 1e3
 obs <- obs[, !(names(obs) %in% c("cen_x", "cen_y"))]
 obs <- obs[obs$state.y == "California", ]
-
+??map_data
 
 obs$date <- as.Date(obs$date)
 obs$space_id <- as.numeric(as.factor(obs$maiac_id))

@@ -81,7 +81,6 @@ cv_out <- merge(cv_out,
                all.x = TRUE)
 
 
-unique(cv_out$cv_type_spec)
 
 test <- cv_out |>
     filter(cv_type_spec == 'Ordinary',
@@ -99,10 +98,8 @@ obs_over_preds <- cv_out |>
          y = "Observation", 
          title = "Prediction vs. Observation",
          subtitle = "Ordinary Cross Validation, Matern Nu = 0.5")
-ggsave(paste0(save_dir, "obs_over_preds.png"), width = 8, height = 5)
+ggsave(paste0(save_dir, "obs_over_preds.png"), width = 16, height = 10)
 
-hist(((test$estimate - test$obs)^2))
-summary(test$estimate)
 cv_out |>
     mutate(cover = obs > lower_95 & obs < upper_95) |>
     group_by(matern_nu, cv_type_spec) |>
@@ -123,7 +120,6 @@ cv_out |>
                                  escape = F) |>
     writeLines(paste0(save_dir, "cv_rmse.tex"))
 
-sd(obs$pm_aqs)
 
 #cv RMSE by monmth
 cv_out |>
@@ -133,8 +129,7 @@ cv_out |>
     summarise(rmse = sqrt(mean((estimate - obs)^2))) |>
     pivot_wider(names_from = month, values_from = rmse) |>
     rename(`Cross Validation Type` = cv_type_spec,
-           `Matern Nu Parameter` = matern_nu,
-           RMSE = rmse) |>
+           `Matern Nu Parameter` = matern_nu) |>
     rename_at(vars(`1`:`12`), ~ month.abb) |>
     write.csv(paste0(save_dir, "cv_rmse_month.csv"), row.names = F)
 
@@ -211,21 +206,21 @@ others_out |>
 ggsave(paste0(save_dir, "tau_beta_trace.png"), width = 12, height = 6) 
 
 
-others_out |>
-    distinct(nngp, discrete_theta, time_fit) |>
-    ggplot(aes(x = paste(nngp, discrete_theta, sep = " - "), y = time_fit)) +
-    geom_bar(stat = 'identity') +
-    labs(x = "Model", 
-         y = "Time (hours)", 
-         title = "Time to Fit Model")
-ggsave(paste0(save_dir, "time_fit.png"), width = 8, height = 4)
+#others_out |>
+#    distinct(nngp, discrete_theta, time_fit) |>
+#    ggplot(aes(x = paste(nngp, discrete_theta, sep = " - "), y = time_fit)) +
+#    geom_bar(stat = 'identity') +
+#    labs(x = "Model", 
+#         y = "Time (hours)", 
+#         title = "Time to Fit Model")
+#ggsave(paste0(save_dir, "time_fit.png"), width = 8, height = 4)
 
-others_out |>
-    filter(nngp == 'nngp', discrete_theta == 'gibbs') |>
-    ggplot(aes(x = iter, y =  theta.beta)) +
-    geom_line()
+#others_out |>
+#    filter(nngp == 'nngp', discrete_theta == 'gibbs') |>
+#    ggplot(aes(x = iter, y =  theta.beta)) +
+#    geom_line()
 
-length(unique(obs$space_id))
+#length(unique(obs$space_id))
 
 
 ########################################################
@@ -253,9 +248,9 @@ obs |>
                     group = group), 
                 fill = NA, 
                 color = "black") +
-  geom_point(aes(x = longitude, 
-                 y = latitude, 
-                 color = pm25)) +
+  geom_point(aes(x = grid_lon, 
+                 y = grid_lat, 
+                 color = pm_aqs)) +
   scale_colour_viridis_c(
     guide = guide_colorbar(
       barwidth = 0.5, 
@@ -279,157 +274,8 @@ obs |>
 ggsave(paste0(save_dir, "obs_map_20181008.png"), width = 8, height = 5)
 
 
-# Plot cmaq (no ca)
-obs |>
-  filter(date == '2018-10-08') |>
-  ggplot() +
-   geom_polygon(data = ca_map, 
-                aes(x = long, 
-                    y = lat, 
-                    group = group), 
-                fill = NA, 
-                color = "black") +
-   geom_polygon(data = or_map, 
-                aes(x = long, 
-                    y = lat, 
-                    group = group), 
-                fill = NA, 
-                color = "black") +
-  geom_point(aes(x = longitude, 
-                 y = latitude, 
-                 color = aod.final)) +
-  scale_colour_viridis_c(
-    guide = guide_colorbar(
-      barwidth = 0.5, 
-      barheight = 4,
-      title.theme = element_text(size = 8),
-      label.theme = element_text(size = 6)
-    )) +
-  labs(x = "Longitude", 
-       y = "Latitude", 
-       color = "PM2.5 (ug/m^3)") +
-  theme_bw() +
-  theme(
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    legend.position = c(1, 0), 
-    legend.justification = c(1, 0),
-    legend.background = element_rect(fill = "transparent", color = "black"),
-    legend.key.size = unit(0.8, "cm")
-  )
-
-ggsave(paste0(save_dir, "obs_map_20181008_no_ca.png"), width = 8, height = 5)
 
 
-# Plot estimates
-cv_out |>
-  filter(date == '2018-10-08') |>
-  ggplot() +
-   geom_polygon(data = ca_map, 
-                aes(x = long, 
-                    y = lat, 
-                    group = group), 
-                fill = NA, 
-                color = "black") +
-   geom_polygon(data = or_map, 
-                aes(x = long, 
-                    y = lat, 
-                    group = group), 
-                fill = NA, 
-                color = "black") +
-  geom_point(aes(x = longitude, 
-                 y = latitude, 
-                 color = estimate)) +
-  facet_grid(matern_nu ~ cv_type_spec) +
-  scale_colour_viridis_c(
-    guide = guide_colorbar(
-      barwidth = 0.5, 
-      barheight = 4,
-      title.theme = element_text(size = 8),
-      label.theme = element_text(size = 6)
-    )) +
-  labs(x = "Longitude", 
-       y = "Latitude", 
-       color = "Estimated PM2.5 (ug/m^3)") +
-  theme_bw() +
-  theme(
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    legend.position = c(1, 0), 
-    legend.justification = c(1, 0),
-    legend.background = element_rect(fill = "transparent", color = "black"),
-    legend.key.size = unit(0.8, "cm")
-  )
-ggsave(paste0(save_dir, "est_map_20181008_facet_cv_mat.png"), width = 8, height = 5)
-
-
-obs |>
-    ggplot(aes(x = pm25)) +
-    geom_histogram(bins = 100) +
-    labs(x = "PM2.5 (ug/m^3)",
-         y = "Count") +
-    theme(
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-  )
-ggsave(paste0(save_dir, "histogram_all.png"), width = 8, height = 5)
-
-obs |>
-    mutate(month = month.abb[as.numeric(format(date, "%m"))],
-           month = factor(month, levels = month.abb)) |>
-    group_by(month) |>
-    summarise(
-    mean = mean(pm25),
-    median = median(pm25),
-    min = min(pm25),
-    max = max(pm25),
-    sd = sd(pm25)
-  ) |>
-    (\(.) mutate_at(., 2:ncol(.), function(x) sprintf("%.1f", x)))() |>
-    rename_all(function(x) paste0(toupper(substr(x, 1, 1)), substr(x, 2, nchar(x)))) |>
-    kable() |>
-    writeLines(paste0(save_dir, "obs_monthly_stats.tex"))
-
-####spatial buffer justification####
-med_theta_alpha <- others_out |>
-    filter(nngp == 'gp', discrete_theta == 'none') |>
-    pull(theta.alpha) |>
-    median()
-
-med_theta_beta <- others_out |>
-    filter(nngp == 'gp', discrete_theta == 'none') |>
-    pull(theta.beta) |>
-    median()
-
-corr_by_dist <- function(km, theta) {
-    exp(-km / theta)
-}
-
-corr_by_dist_inv <- function(corr, theta) {
-    -theta * log(corr)
-}
-
-tibble(km = seq(1, 500, 1)) |>
-    mutate(alpha = corr_by_dist(km, med_theta_alpha),
-           beta = corr_by_dist(km, med_theta_beta)) |>
-    pivot_longer(cols = c(alpha, beta), 
-                 names_to = 'theta', 
-                 values_to = 'value') |>
-    ggplot() +
-    geom_line(aes(x = km, y = value, color = theta)) +
-    geom_hline(yintercept = 0.8, linetype = 'dashed') +
-    geom_hline(yintercept = 0.5, linetype = 'dashed') +
-    labs(x = "Distance (km)", 
-         y = "Correlation", 
-         color = "Theta",
-         title = "Correlation by Distance",
-         subtitle = "Spatial Buffer Cutoff As Dashed Lines")
-ggsave(paste0(save_dir, "corr_by_dist.png"), width = 8, height = 4)
-
-round(mean(corr_by_dist_inv(0.8, med_theta_alpha), corr_by_dist_inv(0.8, med_theta_beta)))
-round(mean(corr_by_dist_inv(0.5, med_theta_alpha), corr_by_dist_inv(0.5, med_theta_beta)))
-corr_by_dist_inv(0.5, med_theta_alpha)
-corr_by_dist_inv(0.5, med_theta_beta)
 
 
 ########################################################
@@ -437,7 +283,7 @@ corr_by_dist_inv(0.5, med_theta_beta)
 ########################################################
 library(grmbayes)
 library(tidyverse)
-fit_dat <- readRDS("../../output/results/fits/full_us_fit_0.5_ordinary.RDS")
+fit_dat <- readRDS("../../output/results/fits/fit_0.5_ordinary.RDS")
 alpha_space <- fit_dat$ctm_fit$alpha.space
 alpha_space$mean_alpha_space <- rowMeans(alpha_space[, 3:ncol(alpha_space)])
 alpha_space <- alpha_space[, c("space.id", "spacetime.id", "mean_alpha_space")]
@@ -595,26 +441,11 @@ ctm <- CTM |>
               by = "grid_cell")
 ctm$time_id <- as.integer(factor(ctm$date))
 ctm$spacetime_id <- rep(1, nrow(ctm))
-grid.info
-table(ctm$date)
 
 
-ctm_fit <- readRDS("../../output/results/fits/full_us_fit_0.5_ordinary.RDS")
+ctm_fit <- readRDS("../../output/results/fits/fit_0.5_ordinary.RDS")
 ctm_fit <- ctm_fit$ctm_fit
 
-#ctm_pred <- grm_pred(grm.fit = ctm_fit,
-#                     X.pred = ctm$pm25_tot_ncar,
-#                     coords.Y = obs[, c("x", "y")],
-#                     space.id.Y = obs$aqs_site_id,
-#                     coords.pred = ctm[, c("x", "y")],
-#                     space.id = ctm$grid_cell,
-#                     time.id = ctm$time_id,
-#                     spacetime.id = ctm$spacetime_id,
-#                     include.additive.annual.resid = T,
-#                     include.multiplicative.annual.resid = T,
-#                     n.iter = 1000,
-#                     verbose = T)
-#predictions
 ctm_pred <- readRDS("../../output/results/preds/preds.RDS")
 #data used to make predictions
 ctm_pred_info <- readRDS("../../data/created/preds.rds") |>
@@ -624,9 +455,9 @@ ctm_pred_info <- readRDS("../../data/created/preds.rds") |>
 
 
 
-sum(ctm_pred$space.id != ctm_pred_info$space_id)
-sum(ctm_pred$time.id != ctm_pred_info$time_id)
-sum(ctm_pred$spacetime.id != ctm_pred_info$spacetime_id)
+#sum(ctm_pred$space.id != ctm_pred_info$space_id)
+#sum(ctm_pred$time.id != ctm_pred_info$time_id)
+#sum(ctm_pred$spacetime.id != ctm_pred_info$spacetime_id)
 
 ctm_pred$date <- ctm_pred_info$date
 ctm_pred$lat <- ctm_pred_info$grid_lat
@@ -649,7 +480,7 @@ pred_map_one_day <- ctm_pred_one_day |>
                  y = lat, 
                  color = estimate),
              shape = 15,
-             size = 0.3) +
+             size = 0.4) +
   scale_colour_viridis_c(
     guide = guide_colorbar(
       barwidth = 0.5, 
@@ -811,8 +642,8 @@ ggsave(paste0(save_dir, "pred_map_small_beta_space_20181008.png"),
 ctm |>
   filter(date == '2018-10-08') |>
   ggplot() +
-  geom_point(aes(x = grid_lon.y, 
-                 y = grid_lat.y,
+  geom_point(aes(x = grid_lon, 
+                 y = grid_lat,
                  color = pm25_tot_ncar),
              shape = 15,
              size = 0.8) +

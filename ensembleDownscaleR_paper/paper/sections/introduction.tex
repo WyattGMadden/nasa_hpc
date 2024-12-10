@@ -1,0 +1,25 @@
+
+\section*{Introduction}
+
+Air pollution exposure is strongly associated with negative health outcomes. 
+Particulate matter of size less than 2.5 $\mu$m in diameter ($PM_{2.5}$) has been shown to be an especially harmful component of air pollution. 
+For this reason, precise estimation and prediction of $PM_{2.5}$ is an important component of air pollution health research.  
+
+There exists a network of monitors that provide precise, direct measurements of $PM_{2.5}$. 
+However these monitors are relatively expensive to install and maintain, and therefore are both spatially sparse and preferentially located in prioritized areas. 
+
+There exist two additional data sources that are highly correlated with $PM_{2.5}$, enabling the development of statistical methods to predict $PM_{2.5}$ beyond locations at which monitors are located. 
+The first is Chemical Transport Models (CTMs) which provide numerical model simulations of air quality based on physical processes and meteorological data. 
+The second is satellite measurements of Aerosol Optical Depth (AOD), which provide a noisy but fine-grained measurement of how much sunlight reaches the ground. 
+
+
+
+An important area of statistical research is the development of methods that can use either one or both of these measurements to predict $PM_{2.5}$ for locations at which monitors are not located. 
+One such method combines regression models from each of these data sources using Bayesian ensemble averaging, allowing both predictions based on available data for a given grid cell in space and time, and full Bayesian uncertainty quantification \cite{murray2019}. 
+Here we introduce an R package, \texttt{ensembleDownscaleR}, containing a suite of functions that allow users to predict $PM_{2.5}$ for large regions of space and time, using this method.
+
+In this work we first reintroduce the statistical method from \cite{murray2019} with the inclusion of additional specifications that were not detailed in the original manuscript. 
+We then detail the functionality of the R package and provide an example analysis using 2018 data from the Los Angeles metropolitan area. 
+
+
+
