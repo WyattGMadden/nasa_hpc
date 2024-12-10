@@ -1,10 +1,11 @@
 us_preds <- function() {
 
+    loc_dir <- "~/../../projects/hhchang/wmadden/nasa_hpc/full_us_12km/"
     #best rmse matern.nu
-    fit <- readRDS("../../output/results/fits/full_us_fit_0.5_ordinary.RDS")$ctm_fit
+    fit <- readRDS(paste0(loc_dir, "output/results/fits/fit_0.5_ordinary.RDS"))$ctm_fit
 
-    obs <- readRDS("../../data/created/obs.rds")
-    pred_dat <- readRDS("../../data/created/preds.rds")
+    obs <- readRDS(paste0(loc_dir, "data/created/obs.rds"))
+    pred_dat <- readRDS(paste0(loc_dirk, "data/created/preds.rds"))
 
     cat("start predictions \n")
 
@@ -25,7 +26,7 @@ us_preds <- function() {
 
 
     saveRDS(preds,
-            "../../output/results/preds/preds.RDS")
+            paste0(loc_dir, "output/results/preds/preds.RDS"))
 
     cat("job done \n")
 
