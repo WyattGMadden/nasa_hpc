@@ -21,6 +21,9 @@ aod_pred <- readRDS("../output/fit_pred_objects/aod_pred.rds")
 ensemble_fit <- readRDS("../output/fit_pred_objects/ensemble_fit.rds")
 weight_preds <- readRDS("../output/fit_pred_objects/weight_preds.rds")
 results <- readRDS("../output/fit_pred_objects/results.rds")
+ensemble_preds_at_observations <- readRDS("../output/fit_pred_objects/ensemble_preds_at_observations.rds")
+runtime <- readRDS("../output/fit_pred_objects/runtime.rds")
+
 
 
 # Data - study area calculations 
@@ -243,51 +246,7 @@ stage4bplt <- monitor_pm25_with_cmaq |>
     theme(legend.position = "bottom",
           legend.direction = "horizontal")
 
-stage4cplt <- monitor_pm25_with_cmaq |>
-    left_join(cmaq_fit_cv,
-              by = c("time_id" = "time.id", 
-                     "space_id" = "space.id", 
-                     "spacetime_id" = "spacetime.id")) |>
-    filter(date == date_use) |>
-    ggplot(aes(x = longitude, y = latitude, colour = sd)) +
-    geom_polygon(data = ca_map, 
-                 aes(x = long, y = lat, group = group),
-                 fill = NA, color = "black") +
-    geom_point(size = size_use) +
-    scale_color_viridis_c() +
-    coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
-                    ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
-    labs(x = "Longitude",
-            y = "Latitude",
-            colour = "PM2.5 Standard Deviation",
-            title = "CMAQ-Based PM2.5 Standard Deviation") +
-    theme(legend.position = "bottom",
-          legend.direction = "horizontal")
-
-ensemble_weights <- 1 / (exp(-ensemble_fit$q[, 2:ncol(ensemble_fit$q)]) + 1)
-ensemble_weights <- apply(ensemble_weights, 1, mean)
-ensemble_fit_post <- data.frame(ensemble_weights = ensemble_weights,
-                                space_id = ensemble_fit$q$space.id)
-
-stage4dplt <- monitor_pm25_with_cmaq |>
-    left_join(ensemble_fit_post, by = "space_id") |>
-    filter(date == date_use) |>
-    ggplot(aes(x = longitude, y = latitude, colour = ensemble_weights)) +
-    geom_polygon(data = ca_map, 
-                 aes(x = long, y = lat, group = group),
-                 fill = NA, color = "black") +
-    geom_point(size = size_use) +
-    scale_color_viridis_c() +
-    coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
-                    ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
-    labs(x = "Longitude",
-         y = "Latitude",
-         colour = "Weight Estimate",
-         title = "Ensemble Weight Estimate") +
-    theme(legend.position = "bottom",
-          legend.direction = "horizontal")
-
-stage4eplt <- monitor_pm25_with_aod |>
+stage4cplt <- monitor_pm25_with_aod |>
     left_join(aod_fit_cv,
               by = c("time_id" = "time.id", 
                      "space_id" = "space.id", 
@@ -308,7 +267,74 @@ stage4eplt <- monitor_pm25_with_aod |>
     theme(legend.position = "bottom",
           legend.direction = "horizontal")
 
-stage4fplt <- monitor_pm25_with_aod |>
+stage4dplt <- monitor_pm25_with_aod |>
+    left_join(ensemble_preds_at_observations,
+              by = c("time_id" = "time.id", 
+                     "space_id" = "space.id", 
+                     "spacetime_id" = "spacetime.id")) |>
+    filter(date == date_use) |>
+    ggplot(aes(x = longitude, y = latitude, colour = ensemble.estimate)) +
+    geom_polygon(data = ca_map, 
+                 aes(x = long, y = lat, group = group),
+                 fill = NA, color = "black") +
+    geom_point(size = size_use) +
+    scale_color_viridis_c() +
+    coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
+                    ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
+    labs(x = "Longitude",
+         y = "Latitude",
+         colour = "PM2.5 Estimate",
+         title = "Ensemble-Based PM2.5 Estimate") +
+    theme(legend.position = "bottom",
+          legend.direction = "horizontal")
+
+ensemble_weights <- 1 / (exp(-ensemble_fit$q[, 2:ncol(ensemble_fit$q)]) + 1)
+ensemble_weights <- apply(ensemble_weights, 1, mean)
+ensemble_fit_post <- data.frame(ensemble_weights = ensemble_weights,
+                                space_id = ensemble_fit$q$space.id)
+
+stage4eplt <- monitor_pm25_with_cmaq |>
+    left_join(ensemble_fit_post, by = "space_id") |>
+    filter(date == date_use) |>
+    ggplot(aes(x = longitude, y = latitude, colour = ensemble_weights)) +
+    geom_polygon(data = ca_map, 
+                 aes(x = long, y = lat, group = group),
+                 fill = NA, color = "black") +
+    geom_point(size = size_use) +
+    scale_color_viridis_c() +
+    coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
+                    ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
+    labs(x = "Longitude",
+         y = "Latitude",
+         colour = "Weight Estimate",
+         title = "Ensemble Weight Estimate") +
+    theme(legend.position = "bottom",
+          legend.direction = "horizontal")
+
+stage4fplt <- monitor_pm25_with_cmaq |>
+    left_join(cmaq_fit_cv,
+              by = c("time_id" = "time.id", 
+                     "space_id" = "space.id", 
+                     "spacetime_id" = "spacetime.id")) |>
+    filter(date == date_use) |>
+    ggplot(aes(x = longitude, y = latitude, colour = sd)) +
+    geom_polygon(data = ca_map, 
+                 aes(x = long, y = lat, group = group),
+                 fill = NA, color = "black") +
+    geom_point(size = size_use) +
+    scale_color_viridis_c() +
+    coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
+                    ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
+    labs(x = "Longitude",
+            y = "Latitude",
+            colour = "PM2.5 Standard Deviation",
+            title = "CMAQ-Based PM2.5 Standard Deviation") +
+    theme(legend.position = "bottom",
+          legend.direction = "horizontal")
+
+
+
+stage4gplt <- monitor_pm25_with_aod |>
     left_join(aod_fit_cv,
               by = c("time_id" = "time.id", 
                      "space_id" = "space.id", 
@@ -329,15 +355,36 @@ stage4fplt <- monitor_pm25_with_aod |>
     theme(legend.position = "bottom",
           legend.direction = "horizontal")
 
-stage4plt <- (stage4aplt + stage4bplt + stage4cplt + stage4dplt + stage4eplt + stage4fplt) +
-    plot_layout(ncol = 3, byrow = T) +
+stage4hplt <- monitor_pm25_with_aod |>
+    left_join(ensemble_preds_at_observations,
+              by = c("time_id" = "time.id", 
+                     "space_id" = "space.id", 
+                     "spacetime_id" = "spacetime.id")) |>
+    filter(date == date_use) |>
+    ggplot(aes(x = longitude, y = latitude, colour = ensemble.sd)) +
+    geom_polygon(data = ca_map, 
+                 aes(x = long, y = lat, group = group),
+                 fill = NA, color = "black") +
+    geom_point(size = size_use) +
+    scale_color_viridis_c() +
+    coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
+                    ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
+    labs(x = "Longitude",
+         y = "Latitude",
+         colour = "PM2.5 Standard Deviation",
+         title = "Ensemble-Based PM2.5 Standard Deviation") +
+    theme(legend.position = "bottom",
+          legend.direction = "horizontal")
+
+stage4plt <- (stage4aplt + stage4bplt + stage4cplt + stage4dplt + stage4eplt + stage4fplt + stage4gplt + stage4hplt) +
+    plot_layout(ncol = 4, byrow = T) +
     plot_annotation(tag_levels = "A")
 
 ggsave(
     "../output/figures/stage4.png", 
     stage4plt, 
-    width = 12, 
-    height = 10, 
+    width = 18, 
+    height = 11,
     dpi = 600
 )
 
@@ -520,4 +567,73 @@ ggsave(
     height = 9,
     dpi = 600
 )
+
+####################
+### Results Table###
+####################
+
+
+pred_obs_full <- ensemble_preds_at_observations |>
+    left_join(cmaq_fit_cv[, c("time.id", "space.id", "spacetime.id", "obs","estimate", "sd")],
+              by = c("time.id", "space.id", "spacetime.id")) |>
+    mutate(cmaq.estimate = estimate,
+           cmaq.sd = sd) |>
+    select(-estimate, -sd) |>
+    left_join(aod_fit_cv[, c("time.id", "space.id", "spacetime.id", "estimate", "sd")],
+              by = c("time.id", "space.id", "spacetime.id")) |>
+    mutate(aod.estimate = estimate,
+           aod.sd = sd) |>
+    select(-estimate, -sd) |>
+    filter(!is.na(ensemble.estimate),
+           !is.na(cmaq.estimate),
+           !is.na(aod.estimate)) |>
+    pivot_longer(cols = c(ensemble.estimate, cmaq.estimate, aod.estimate, 
+                          ensemble.sd, cmaq.sd, aod.sd), 
+                 names_to = c("type", ".value"),
+                 names_pattern = "(.*)\\.(.*)"
+  )
+
+
+
+pred_obs_full_metrics_table <- pred_obs_full |>
+    mutate(lower = estimate - 1.96 * sd,
+           upper = estimate + 1.96 * sd) |>
+    group_by(type) |>
+    summarise(
+        rmse = sqrt(mean((estimate - obs)^2)),
+        R2 = 1 - sum((obs - estimate)^2) / sum((obs - mean(obs))^2),
+        avg_sd = mean(sd),
+        coverage = mean((lower <= obs) & (upper >= obs))
+    ) |>
+    mutate(type = case_when(
+        type == "ensemble" ~ "Ensemble Model",
+        type == "cmaq" ~ "CMAQ-Based Model",
+        type == "aod" ~ "AOD-Based Model"
+    )) |>
+    rename("Model" = type,
+           "RMSE" = rmse,
+           "R^2" = R2,
+           "Average Posterior SD" = avg_sd,
+           "Coverage of 95% PI" = coverage) |>
+    knitr::kable("latex", digits = 3)
+
+writeLines(
+    pred_obs_full_metrics_table, 
+    "../output/figures/pred_obs_full_metrics_table.tex"
+)
+
+
+###############
+### Runtime ###
+###############
+
+minutestime <- runtime['elapsed'] / 60
+
+
+
+
+
+
+
+
 

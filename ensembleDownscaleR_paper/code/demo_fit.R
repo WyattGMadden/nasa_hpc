@@ -1,6 +1,9 @@
 
 library(ensembleDownscaleR)
 
+# start timer
+start_time <- proc.time()
+
 
 
 
@@ -52,6 +55,8 @@ aod_fit <- grm(
 saveRDS(aod_fit, "../output/fit_pred_objects/aod_fit.rds")
 aod_fit <- readRDS("../output/fit_pred_objects/aod_fit.rds")
 
+
+# Stage 2
 
 
 cv_id_cmaq_ord <- create_cv(
@@ -116,7 +121,7 @@ saveRDS(aod_fit_cv, "../output/fit_pred_objects/aod_fit_cv.rds")
 aod_fit_cv <- readRDS("../output/fit_pred_objects/aod_fit_cv.rds")
 
 
-# Stage 2
+# Stage 3
 
 cmaq_for_predictions <- readRDS("../data/cmaq_for_predictions.rds")
 
@@ -130,8 +135,6 @@ cmaq_pred <- grm_pred(
     space.id = cmaq_for_predictions$space_id,
     time.id = cmaq_for_predictions$time_id,
     spacetime.id = cmaq_for_predictions$spacetime_id,
-    include.additive.annual.resid = T,
-    include.multiplicative.annual.resid = T,
     n.iter = 500,
     verbose = T
 )
@@ -154,8 +157,6 @@ aod_pred <- grm_pred(
     space.id = aod_for_predictions$space_id,
     time.id = aod_for_predictions$time_id,
     spacetime.id = aod_for_predictions$spacetime_id,
-    include.additive.annual.resid = T,
-    include.multiplicative.annual.resid = T,
     n.iter = 500,
     verbose = T
 )
@@ -164,7 +165,7 @@ saveRDS(aod_pred, "../output/fit_pred_objects/aod_pred.rds")
 aod_pred <- readRDS("../output/fit_pred_objects/aod_pred.rds")
 
 
-# Stage 3
+# Stage 4
 
 ensemble_fit <- ensemble_spatial(
     grm.fit.cv.1 = cmaq_fit_cv,
@@ -184,6 +185,19 @@ saveRDS(ensemble_fit, "../output/fit_pred_objects/ensemble_fit.rds")
 ensemble_fit <- readRDS("../output/fit_pred_objects/ensemble_fit.rds")
 
 
+# Other 
+
+ensemble_preds_at_observations <- gap_fill(
+    grm.pred.1 = cmaq_fit_cv,
+    grm.pred.2 = aod_fit_cv,
+    weights = ensemble_fit
+)
+
+saveRDS(ensemble_preds_at_observations, "../output/fit_pred_objects/ensemble_preds_at_observations.rds")
+ensemble_preds_at_observations <- readRDS("../output/fit_pred_objects/ensemble_preds_at_observations.rds")
+
+# Stage 5
+
 weight_preds <- weight_pred(
     ensemble.fit = ensemble_fit,
     coords = cmaq_for_predictions[, c("x", "y")],
@@ -195,12 +209,19 @@ weight_preds <- weight_pred(
 saveRDS(weight_preds, "../output/fit_pred_objects/weight_preds.rds")
 weight_preds <- readRDS("../output/fit_pred_objects/weight_preds.rds")
 
+# Stage 6
 
-
-results <- gap_fill(grm.pred.1 = cmaq_pred,
-                    grm.pred.2 = aod_pred,
-                    weights = weight_preds)
+results <- gap_fill(
+    grm.pred.1 = cmaq_pred,
+    grm.pred.2 = aod_pred,
+    weights = weight_preds)
 
 saveRDS(results, "../output/fit_pred_objects/results.rds")
 results <- readRDS("../output/fit_pred_objects/results.rds")
+
+# stop timer
+end_time <- proc.time()
+total_runtime <- end_time - start_time
+saveRDS(total_runtime, "../output/fit_pred_objects/runtime.rds")
+
 

@@ -115,18 +115,7 @@ cv_out <- merge(cv_out,
 
 
 
-test |>
-    mutate(model = paste0(cv_type_spec, " - ", matern_nu)) |>
-    ggplot(aes(x = estimate, y = obs, color = model)) +
-    geom_point(alpha = 0.1) +
-    geom_abline(slope = 1, intercept = 0) +
-    labs(x = "Prediction", 
-         y = "Observation", 
-         title = "Prediction vs. Observation",
-         subtitle = "Ordinary Cross Validation, Matern Nu = 0.5")
 
-summary(((cv_out$estimate - cv_out$obs)^2))
-sd(cv_out$obs)
 cv_out |>
     mutate(cover = obs > lower_95 & obs < upper_95) |>
     group_by(matern_nu, cv_type_spec) |>
@@ -183,20 +172,6 @@ cv_out |>
          title = "Max Observed and Predicted Value by Day")
 
 ggsave(paste0(save_dir, "cv_pred_daily_max_hist.png"), width = 8, height = 4) 
-
-#observed value one day in october
-cv_out |>
-    filter(time_id == 288) |>
-    ggplot(aes(x = x, y = y)) +
-    geom_point(aes(color = obs))
-
-
-
-#cv prediction one day in october
-cv_out |>
-    filter(time_id == 288) |>
-    ggplot(aes(x = x, y = y)) +
-    geom_point(aes(color = estimate))
 
 
 
@@ -347,92 +322,6 @@ others_out |>
 ggsave(paste0(save_dir, "time_fit.png"), width = 8, height = 4)
 
 
-temp <- output[[1]]
-temp$matern.nu
-temp$cv
-
-temp$ctm_fit$alpha.time %>%
-    pivot_longer(2:ncol(.), 
-                 names_to = 'sample', 
-                 values_to = 'value') |>
-    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
-    ggplot(aes(x = sample, y = value, group = time.id)) + 
-    geom_line(alpha = 0.1)
-
-temp$ctm_fit$alpha.time %>%
-    pivot_longer(2:ncol(.), 
-                 names_to = 'sample', 
-                 values_to = 'value') |>
-    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
-    group_by(time.id) |>
-    summarize(post_mean = mean(value)) |>
-    ggplot(aes(x = time.id, y = post_mean)) +
-    geom_point()
-
-temp$ctm_fit$alpha.time %>%
-    pivot_longer(2:ncol(.), 
-                 names_to = 'sample', 
-                 values_to = 'value') |>
-    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
-    group_by(time.id) |>
-    summarize(post_mean = mean(value)) |>
-    pull(post_mean) |>
-    acf()
-
-temp$ctm_fit$beta.time %>%
-    pivot_longer(2:ncol(.), 
-                 names_to = 'sample', 
-                 values_to = 'value') |>
-    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
-    ggplot(aes(x = sample, y = value, group = time.id)) + 
-    geom_line(alpha = 0.1)
-
-temp$ctm_fit$beta.time %>%
-    pivot_longer(2:ncol(.), 
-                 names_to = 'sample', 
-                 values_to = 'value') |>
-    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
-    group_by(time.id) |>
-    summarize(post_mean = mean(value)) |>
-    ggplot(aes(x = time.id, y = post_mean)) +
-    geom_point()
-
-temp$ctm_fit$beta.time %>%
-    pivot_longer(2:ncol(.), 
-                 names_to = 'sample', 
-                 values_to = 'value') |>
-    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
-    group_by(time.id) |>
-    summarize(post_mean = mean(value)) |>
-    pull(post_mean) |>
-    acf()
-
-
-temp_alpha_time <- temp$ctm_fit$alpha.time %>%
-    pivot_longer(2:ncol(.), 
-                 names_to = 'sample', 
-                 values_to = 'value') |>
-    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
-    filter(time.id == 20)
-
-temp_alpha_space <- temp$ctm_fit$alpha.space %>%
-    pivot_longer(3:ncol(.), 
-                 names_to = 'sample', 
-                 values_to = 'value') |>
-    mutate(sample = as.integer(substr(sample, 7, nchar(sample)))) |>
-    filter(space.id == 20)
-
-temp_alpha0 <- tibble(value = temp$ctm_fit$others$alpha0) |>
-    mutate(sample = 1:length(value)) 
-
-
-plot(temp_alpha_time$value + temp_alpha_space$value + temp_alpha0$value, type = 'l')
-    
-temp_alpha_0 <- temp$ctm_fit$alpha.0 %>%
-    pivot_longer(2:ncol(.), 
-                 names_to = 'sample', 
-                 values_to = 'value') |>
-    mutate(sample = as.integer(substr(sample, 7, nchar(sample))))
 
 
 
@@ -449,8 +338,8 @@ us_map <- map_data("world") |>
 
 ca_map <- map_data("state") %>%
   filter(region == "california")
-or_map <- map_data("state") %>%
-  filter(region == "oregon")
+#or_map <- map_data("state") %>%
+#  filter(region == "oregon")
 
 # Plot
 obs |>
@@ -462,12 +351,12 @@ obs |>
                     group = group), 
                 fill = NA, 
                 color = "black") +
-   geom_polygon(data = or_map, 
-                aes(x = long, 
-                    y = lat, 
-                    group = group), 
-                fill = NA, 
-                color = "black") +
+#   geom_polygon(data = or_map, 
+#                aes(x = long, 
+#                    y = lat, 
+#                    group = group), 
+#                fill = NA, 
+#                color = "black") +
   geom_point(aes(x = longitude, 
                  y = latitude, 
                  color = pm25)) +
@@ -506,20 +395,20 @@ cv_out |>
                     group = group), 
                 fill = NA, 
                 color = "black") +
-   geom_polygon(data = or_map, 
-                aes(x = long, 
-                    y = lat, 
-                    group = group), 
-                fill = NA, 
-                color = "black") +
+#   geom_polygon(data = or_map, 
+#                aes(x = long, 
+#                    y = lat, 
+#                    group = group), 
+#                fill = NA, 
+#                color = "black") +
   geom_point(aes(x = longitude, 
                  y = latitude, 
                  color = estimate)) +
   facet_grid(matern_nu ~ cv_type_spec) +
   scale_colour_viridis_c(
     guide = guide_colorbar(
-      barwidth = 0.1, 
-      barheight = .8,
+      barwidth = 0.2, 
+      barheight = 4,
       title.theme = element_text(size = 4),
       label.theme = element_text(size = 3)
     )) +
@@ -530,12 +419,12 @@ cv_out |>
   theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    legend.position = c(1, 0.5), 
-    legend.justification = c(1, 0),
+    legend.position = c(1, 1), 
+    legend.justification = c(1, 1),
     legend.background = element_rect(fill = "transparent", color = "black"),
     legend.key.size = unit(0.2, "cm")
   )
-ggsave(paste0(save_dir, "est_map_20181008_facet_cv_mat.png"), width = 10, height = 14)
+ggsave(paste0(save_dir, "est_map_20181008_facet_cv_mat.png"), width = 12, height = 8)
 
 
 obs |>
@@ -822,6 +711,7 @@ preds_est2 <- readRDS("../../../full_us_12km/output/results/preds/preds.RDS")
 
 
 preds <- readRDS("../../data/created/preds.rds")
+
 
 sum(preds_est$space.id != preds$space_id)
 sum(preds_est$time.id != preds$time_id)

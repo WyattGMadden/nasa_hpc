@@ -49,29 +49,54 @@
 
 Air pollution exposure is strongly associated with negative health outcomes. 
 Particulate matter of size less than 2.5 $\mu$m in diameter ($PM_{2.5}$) has been shown to be an especially harmful component of air pollution. 
-For this reason, precise estimation and prediction of $PM_{2.5}$ is an important component of air pollution health research.  
+For this reason, accurate estimation and prediction of $PM_{2.5}$ is an important component of air pollution health research.  
 
-There exists a network of monitors that provide precise, direct measurements of $PM_{2.5}$. 
+The U.S. EPA maintains a network of monitors that provide precise, direct measurements of $PM_{2.5}$. 
 However these monitors are relatively expensive to install and maintain, and therefore are both spatially sparse and preferentially located in prioritized areas. 
 
-There exist two additional data sources that are highly correlated with $PM_{2.5}$, enabling the development of statistical methods to predict $PM_{2.5}$ beyond locations at which monitors are located. 
+There exist two additional data sources that are highly correlated with $PM_{2.5}$, which enable the development of statistical methods to predict $PM_{2.5}$ beyond locations at which monitors are located. 
 The first is Chemical Transport Models (CTMs) which provide numerical model simulations of air quality based on physical processes and meteorological data. 
 The second is satellite measurements of Aerosol Optical Depth (AOD), which provide a noisy but fine-grained measurement of how much sunlight reaches the ground. 
 
 
 
 An important area of statistical research is the development of methods that can use either one or both of these measurements to predict $PM_{2.5}$ for locations at which monitors are not located. 
-One such method combines regression models from each of these data sources using Bayesian ensemble averaging, allowing both predictions based on available data for a given grid cell in space and time, and full Bayesian uncertainty quantification \cite{murray2019}. 
-Here we introduce an R package, \texttt{ensembleDownscaleR}, containing a suite of functions that allow users to predict $PM_{2.5}$ for large regions of space and time, using this method.
+One such method combines regression models from each of these data sources using Bayesian ensemble averaging, allowing predictions based on available data for a given grid cell in space and time, and full Bayesian uncertainty quantification \cite{murray2019}. 
+Here we introduce an R package, \texttt{ensembleDownscaleR}, containing a suite of functions that allow users to predict $PM_{2.5}$ for large regions of space and time using this method.
 
-In this work we first reintroduce the statistical method from \cite{murray2019} with the inclusion of additional specifications that were not detailed in the original manuscript. 
-We then detail the functionality of the R package and provide an example analysis using 2018 data from the Los Angeles metropolitan area. 
+In this work we reintroduce the statistical method from \cite{murray2019} with the inclusion of additional specifications that were not detailed in the original manuscript. 
+We also detail the functionality of the R package and provide an example analysis using 2018 data from the Los Angeles metropolitan area. 
+This work is structured as a tutorial designed to guide practitioners in the use of the \texttt{ensembleDownscaleR} R package. 
+Each stage includes a methodological introduction, code examples applied to Los Angeles dataset, and corresponding results. 
+
+We make the data available here INCLUDE and provide all additional code used for data processing and plot creation here INCLUDE, to ensure full reproducibility of results and assist users in their own analyses. 
+The \texttt{ensembleDownscaleR} R package is available for download here INCLUDE.
+
+\section*{Data}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{../output/figures/studyarea.png}
+    \caption{The study area for the Los Angeles metropolitan area includes daily average $PM_{2.5}$ measurements at 60 monitoring stations from January 1st, 2018, to December 31st, 2018. The red dashed line defines the study area boundaries and the blue triangles mark the locations of the monitoring stations.}
+    \label{fig:pltstudyarea}
+\end{figure}
+We constrain our analyses to a spatial region overlapping the Los Angeles metropolitan area ranging from -120.50 to -115.75 longitude, and from 32.00 to 35.70 latitude, and a temporal range of January 1st, 2018, to December 31st, 2018 (Figure~\ref{fig:pltstudyarea}).
+This spatial region contains 60 AQS monitoring stations that provide hourly $PM_{2.5}$ measurements, which we aggregate to daily averages.
+
+Chemical transport model (CTM) data was obtained from the Community Multiscale Air Quality (CMAQ) model, which provides daily $PM_{2.5}$ predictions at 12 km spatial resolution \cite{baker2016contribution}.
+Each 1 km x 1 km grid cell in the study area is matched with the nearest CMAQ grid cell to develop the prediction dataset.
+
+Additional spatial and spatio-temporal covariates are matched to both monitor locations and grid cells.
+These include elevation (\texttt{elevation}), population density (\texttt{population}), cloud cover (\texttt{cloud}), east-west wind velocity (\texttt{u\_wind}), north-south wind velocity (\texttt{v\_wind}), hpbl (\texttt{hpbl}), shortwave radiation (\texttt{short\_rf}), and humidity at two meters above the ground (\texttt{humidity\_2m}).
+These are further detailed in the supporting information.
 
 
 
-\section*{Methods}
+\section*{Methods and Results}
 
-We break up the complete workflow for producing Bayesian ensemble $PM_{2.5}$ predictions into six stages, detailed as follows. 
+In this section we provide a case study for all stages of the Bayesian ensemble fitting process on the previously introduced data from the Los Angeles metropolitan area in 2018. 
+For each stage we detail the methods used, provide code examples to illustrate the use of revelent \texttt{ensembleDownscaleR} package functions, and present corresponding results.
+We break up this complete workflow for producing Bayesian ensemble $PM_{2.5}$ predictions into six stages, detailed as follows. 
 
 \begin{description}
     \item[Stage 1:] Fit two Bayesian downscaler regression models, $M_{CTM}$ and $M_{AOD}$, on the monitor-collected $PM_{2.5}$ data, one matched with CTM data and the other matched with AOD data, following the form $pm_{2.5}(s,t) = \alpha(s, t) + \beta(s, t) X(s, t) + \mathbf{l}(s)' \bs{\gamma} +  \mathbf{m}(s, t)' \boldsymbol{\delta} + \epsilon(s, t)$, where $X$ is either AOD or CTM, and $\mathbf{l}$ and $\mathbf{m}$ are additional spatial and spatio-temporal covariates respectively. 
@@ -79,12 +104,11 @@ We break up the complete workflow for producing Bayesian ensemble $PM_{2.5}$ pre
     \item[Stage 3:] Use cross-validation to produce two sets of out-of-sample $PM_{2.5}$ prediction means and variances using the same data and model form as in stage 1. This produces two datasets of out-of-sample prediction means and variances for each monitor observation.
     \item[Stage 4:] Estimate spatially varying weights from the out-of-sample prediction mean and variances from stage 2 and the original monitor $PM_{2.5}$ measurements. 
     \item[Stage 5:] Use Gaussian process spatial interpolation (krigging) to predict weights for all grid cells in the study area. 
-    \item[Stage 6:] Use the fitted models from stage 1 and the weight estimates from stage 4 to acquire ensemble estimates of $PM_{2.5}$ at each grid cell in the study area. 
+    \item[Stage 6:] Use the fitted models from stage 1 and the weight estimates from stage 4 to acquire ensemble predictions of $PM_{2.5}$ at each grid cell in the study area. 
 \end{description}
 
-\noindent Each of these stages are fully specified in the following sections.
-
-\subsection*{Stage 1 - Downscaler Regression Model}
+Running all stages on the previously detailed Los Angeles dataset (including $PM_2.5$ observations across 60 monitoring stations for the entire year of 2018, and 1km x 1km CTM and AOD prediction data across 122,735 grid cell locations for the month of July 2018), with 2500 iterations per model fit (for two stage 1 model fits, 20 stage 2 model fits, and one stage 4 model fit), takes approximately 1.7 hours on an Apple MacBook Pro laptop with an Apple M3 Max processor and 36 GB of RAM.
+\subsection*{Stage 1: Downscaler Regression Model}
 
 This section details the model specifications available for Bayesian downscaler regression model fitting using the provided \texttt{grm()} function. 
 
@@ -188,111 +212,13 @@ The fixed effects are modeled with normal priors, $\bs{\gamma} \sim N(0, (\lambd
 Thus the $\lambda$ parameters share the same hyperparameter settings as those for $\sigma^2$, specified by the user using the $\texttt{sigma.a}$ and $\texttt{sigma.b}$ arguments in the \texttt{grm()} function.
 
 
+\subsubsection*{Stage 1 code example}
 
-\subsection*{Stage 2 - Produce posterior means and variances for all CTM and AOD data}
-CTM data is available for all times and locations in the study area while AOD data availability depends on time period. 
-In this stage we use the \texttt{grm\_pred()} to produce posterior predictive means and variances for all CTM and AOD data variables. 
-For example, we first input the fitted $M_{CTM}$ model and CTM data for all times and locations in the study area, to produce $\mu^{CTM}_{st}$ and $\sigma^{2, CTM}_{st}$ for all locations $s$ and times $t$. 
-We then input the fitted $M_{AOD}$ model and the sparser AOD data, to produce $\mu^{AOD}_{st}$ and $\sigma^{2, AOD}_{st}$ for all times and locations for which AOD data is available. 
-
-
-\subsection*{Stage 3 - Use cross-validation to produce out-of-sample prediction means and variances}
-
-\subsubsection*{Cross-validation details}
-
-K-fold cross-validation prevents overfitting by separating the data set into k number of folds, iteratively fitting the model to $k-1$ folds and predicting the remaining fold.
-
-We provide two functions to perform k-fold cross-validation with the geostatistical regression model. 
-The first is a helper function \texttt{create\_cv()}that creates cross-validation indices according to a user specified sampling scheme. 
-The second, \texttt{grm\_cv()}, returns the out-of-sample $PM_{2.5}$ predictions, calculated according to user inputted cross-validation indices (either obtained from the \texttt{create\_cv()} function or created by the user), and arguments similar to those used for the \texttt{grm()} function, specifying the downscaler regression model. 
-The out-of-sample predictions are stacked into a dataset of the same length and order as the original dataset on which the cross-validation is applied.
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=1\textwidth]{../output/figures/cv.png}
-    \caption{Four types of cross-validation are available in the \texttt{ensembleDownscaleR} package: ordinary, spatial, spatial clustered, and spatial buffered.
-    Here we visually detail how the folds are assigned for each type of cross-validation, using the monitor locations and times in our study area as an example and assuming 5 cross-validation folds. 
-    We plot all fold assignments for four randomly chosen days, for ordinary, spatial, spatial clustered cross-validation, with color representing fold assignment.
-    For the spatial buffered cross-validation we plot only one fold assignment, with color representing if a location is in the first test fold, the first training fold, or dropped due to being within a 30km buffer of a location in the first test fold.
-    The column facets are the four randomly chosen days (out of days with near-full locations available), and the row facets are the four types of cross-validation.}
-    \label{fig:cvtypes}
-\end{figure}
-
-We provide options in the \texttt{create\_cv()} function to calculate fold indices for the following types of cross-validation (Figure \ref{fig:cvtypes}):
-
-\begin{itemize}
-  \item \textbf{Ordinary}: Folds are randomly assigned across all observations
-  \item \textbf{Spatial}: Folds are randomly assigned across all spatial locations. 
-  \item \textbf{Spatial Clustered}: K spatial clusters are estimated using k-means clustering on spatial locations. These clusters determine the folds. 
-  \item \textbf{Spatial Buffered}: Folds are randomly assigned across all spatial locations. For each fold, observations are dropped from the training set if they are within a user-specified distance from the nearest test set point. 
-\end{itemize}
-
-When assigning folds we enforce that each fold contains at least one observation from each spatial location.
-Locations for which there are fewer observations than folds should be filtered out of the dataset prior to analysis.
-Data from the first and last time point are left unassigned, and out-of-sample predictions for these data are output as missing data.
-
-\subsubsection*{Producing out-of-sample prediction means and variance}
-
-The \texttt{grm\_cv()} function uses the previously detailed cross validation indices and model specifications to produce estimates of $f_{CTM}(y_{st} | M_{CTM})$ and $f_{CTM}(y_{st} | M_{AOD})$, where $y_{st}$ is the is $PM_{2.5}$ value at location $s$, time $t$, and $f_{CTM}$ and $f_{AOD}$ are the posterior predictive distributions based on models $M_{CTM}$ and $M_{AOC}$ respectively, the downscaler regression models. 
-Specifically, \texttt{grm\_cv()} outputs posterior predictive means $\mu_{st}$ and variances $\sigma^2_{st}$ that are used in later stages to fit the full ensemble model. 
-
-
-
-\subsection*{Stage 4 - Estimate spatially varying weights}
-
-At this stage we use the \texttt{ensemble\_spatial()} function to fit the ensemble model  $p(y_{st} | M_{CTM}, M_{AOD}) = w_s f_{CTM}(y_{st} | M_{CTM}) + (1-w_s) f_{AOD}(y_{st}|M_{AOD})$, where $w_s$ are spatially varying weights.
-We estimate the weights $w_s$ by fitting the ensemble model $p(y_{st} | M_{CTM}, M_{AOD})$ on the out-of-sample predictions produced during stage 3, $\widehat{f_{CTM}(y_{st} | M_{CTM})}$ and $\widehat{f_{CTM}(y_{st} | M_{CTM})}$, and the original $PM_{2.5}$ data at all times and a monitor locations.
-We place a Gaussian process prior on the weights, $q_s = logit^{-1}(w_s) \sim GP(0, \tau^2_w  \bl{K}(\theta_w, d))$, where $\bl{K}$ is an exponential kernel, and $\tau^2_w$ and $\theta_w$ are the distance and range parameters, respectively.
-Similar to the spatial processes in stage 1, we place an inverse gamma prior on $\tau^2_w$ and a gamma prior on $\theta_w$, such that $\tau^2_w \sim IG(a_{\tau^2_w}, b_{\tau^2_w})$ and $log(\theta_w) \sim Gamma(a_{\theta_w}, b_{\theta_w})$.
-The user can specify the hyperparameters $a_{\tau^2_w}$, $b_{\tau^2_w}$, $a_{\theta_w}$, and $b_{\theta_w}$ using the \texttt{tau.a}, \texttt{tau.b}, \texttt{theta.a}, and \texttt{theta.b} arguments in the \texttt{ensemble\_spatial()} function.
-
-The \texttt{ensemble\_spatial()} function accepts the output from \texttt{grm\_cv()} in stage 3 as input, and outputs the full posterior distribution samples of $q_s$ where $q_s = logit^{-1}(w_s)$. 
-
-\subsection*{Stage 5 - Predict weights for all locations}
-
-Next we use the \texttt{weight\_pred()} function to spatially interpolate the posterior samples of $w_s$ garnered in stage 4, across all locations in the study area. 
-Specifically $w_{predictions} = logit^{-1}(q_{predictions})$ where $q_{predictions} = \text{krig}(q_s)$, with $q_s$ output from stage 4.
-These weights are used in the final stage to produce ensemble-based $PM_{2.5}$ predictions for all locations in the study area.
-
-
-
-
-
-\subsection*{Stage 6 - Compute ensemble predictions for all locations}
-
-Finally, we input the posterior means and variances for all CTM and AOD data produced in stage 2, and the spatially interpolated weights from stage 5, into the \texttt{gap\_fill()} function, which outputs $PM_{2.5}$ posterior predictive means $\hat{y}_{st}$ and variances $\hat{\sigma}^{2}_{y_{st}}$ for all times $t$ and locations $s$ in the study area. 
-
-For times and locations for which both CTM and AOD are observed, \texttt{gap\_fill()} outputs ensemble-based estimates, where $\hat{y} = w_s \mu^{CTM}_{st} + (1 - w_s)\mu^{AOD}_{st}$ and $\hat{\sigma}^2_{y_{st}} = w^2_s \sigma^{2, CTM}_{st} + (1 - w_s)^2 \sigma^{2, AOD}_{st}$. 
-For times and locations for which solely CTM is available, \texttt{gap\_fill()} outputs posterior predictive means and variances identical to those produces in stage 2 from $M_{CTM}$. 
-
-
-
-\section*{Case study: Los Angeles Metropolitan Area}
-
-In this section we provide a case study running through all stages of the Bayesian ensemble fitting process on data from the Los Angeles metropolitan area in 2018. 
-We provide code snippets to illustrate the use of all previously introduced \texttt{ensembleDownscaleR} package functions. 
-We make the data available here INCLUDE and provide all additional code used for data processing and plot creation here INCLUDE, to ensure full reproducibility of results and assist users in their own analyses. 
-
-
-
-\subsection*{Data}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=1\textwidth]{../output/figures/studyarea.png}
-    \caption{The study area for the Los Angeles metropolitan area includes daily average $PM_{2.5}$ measurements at 60 monitoring stations from January 1st, 2018, to December 31st, 2018. The red dashed line defines the study area boundaries and the blue triangles mark the locations of the monitoring stations.}
-    \label{fig:pltstudyarea}
-\end{figure}
-We constrain our analyses to a region overlapping the Los Angeles metropolitan area ranging from -120.50 to -115.75 longitude, and from 32.00 to 35.70 latitude, which includes daily average $PM_{2.5}$ measurements at 60 monitoring stations from January 1st, 2018, to December 31st, 2018 (Figure~\ref{fig:pltstudyarea}).
-
-INCLUDE more data description
-
-\subsection*{Stage 1}
-
-We first stage is fitting the Bayesian downscaler regression models for both CTM and AOD data separately. 
+We load the \texttt{ensembleDownscaleR} package and fit the Bayesian downscaler regression models for both CTM and AOD data separately, using the previously described Los Angeles $PM_{2.5}$ dataset.
 
 
 \begin{lstlisting}
+library(ensembleDownscaleR}
 monitor_pm25_with_cmaq <- readRDS("monitor_pm25_with_cmaq.rds")
 
 cmaq_fit <- grm(
@@ -333,7 +259,16 @@ aod_fit <- grm(
 
 \end{lstlisting}
 
-\subsection*{Stage 2}
+
+\subsection*{Stage 2: Produce posterior means and variances for all CTM and AOD data}
+CTM data is available for all times and locations in the study area while AOD data availability depends on time period. 
+In this stage we use the \texttt{grm\_pred()} to produce posterior predictive means and variances for all CTM and AOD data variables. 
+For example, we first input the fitted $M_{CTM}$ model and CTM data for all times and locations in the study area, to produce $\mu^{CTM}_{st}$ and $\sigma^{2, CTM}_{st}$ for all locations $s$ and times $t$. 
+We then input the fitted $M_{AOD}$ model and the sparser AOD data, to produce $\mu^{AOD}_{st}$ and $\sigma^{2, AOD}_{st}$ for all times and locations for which AOD data is available. 
+We note that \texttt{grm\_pred()} outputs NA values for prediction data with locations identical to monitor locations. 
+
+
+\subsubsection*{Stage 2 code example}
 
 \begin{figure}[ht]
     \centering
@@ -384,7 +319,50 @@ aod_pred <- grm_pred(
 \end{lstlisting}
 
 
-\subsection*{Stage 3}
+
+\subsection*{Stage 3: Use cross-validation to produce out-of-sample prediction means and variances}
+
+\subsubsection*{Cross-validation details}
+
+K-fold cross-validation prevents overfitting by separating the data set into k number of folds, iteratively fitting the model to $k-1$ folds and predicting the remaining fold.
+
+We provide two functions to perform k-fold cross-validation with the geostatistical regression model. 
+The first is the helper function \texttt{create\_cv()} which creates cross-validation indices according to a user specified sampling scheme. 
+The second, \texttt{grm\_cv()}, returns the out-of-sample $PM_{2.5}$ predictions, calculated according to user inputted cross-validation indices (either obtained from the \texttt{create\_cv()} function or created by the user), and arguments similar to those used for the \texttt{grm()} function, specifying the downscaler regression model. 
+The out-of-sample predictions are stacked into a dataset of the same length and order as the original dataset on which the cross-validation is applied.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{../output/figures/cv.png}
+    \caption{Four types of cross-validation are available in the \texttt{ensembleDownscaleR} package: ordinary, spatial, spatial clustered, and spatial buffered.
+    Here we visually detail how the folds are assigned for each type of cross-validation, using the monitor locations and times in our study area as an example and assuming 5 cross-validation folds. 
+    We plot all fold assignments for four randomly chosen days, for ordinary, spatial, spatial clustered cross-validation, with color representing fold assignment.
+    For the spatial buffered cross-validation we plot only one fold assignment, with color representing if a location is in the first test fold, the first training fold, or dropped due to being within a 30km buffer of a location in the first test fold.
+    The column facets are the four randomly chosen days (out of days with near-full locations available), and the row facets are the four types of cross-validation.}
+    \label{fig:cvtypes}
+\end{figure}
+
+We provide options in the \texttt{create\_cv()} function to calculate fold indices for the following types of cross-validation (Figure \ref{fig:cvtypes}):
+
+\begin{itemize}
+  \item \textbf{Ordinary}: Folds are randomly assigned across all observations
+  \item \textbf{Spatial}: Folds are randomly assigned across all spatial locations. 
+  \item \textbf{Spatial Clustered}: K spatial clusters are estimated using k-means clustering on spatial locations. These clusters determine the folds. 
+  \item \textbf{Spatial Buffered}: Folds are randomly assigned across all spatial locations. For each fold, observations are dropped from the training set if they are within a user-specified distance from the nearest test set point. 
+\end{itemize}
+
+When assigning folds we enforce that each fold contains at least one observation from each spatial location.
+Locations for which there are fewer observations than folds should be filtered out of the dataset prior to analysis.
+Data from the first and last time point are left unassigned, and out-of-sample predictions for these data are output as missing data.
+If the out-of-sample dataset has a larger temporal range then the in-sample dataset for a given fold, the out-of-sample predictions for the extra time points are also output as missing data.
+
+\subsubsection*{Producing out-of-sample prediction means and variance}
+
+The \texttt{grm\_cv()} function uses the previously detailed cross validation indices and model specifications to produce estimates of $f_{CTM}(y_{st} | M_{CTM})$ and $f_{CTM}(y_{st} | M_{AOD})$, where $y_{st}$ is the is $PM_{2.5}$ value at location $s$, time $t$, and $f_{CTM}$ and $f_{AOD}$ are the posterior predictive distributions based on models $M_{CTM}$ and $M_{AOC}$ respectively, the downscaler regression models. 
+Specifically, \texttt{grm\_cv()} outputs posterior predictive means $\mu_{st}$ and variances $\sigma^2_{st}$ that are used in stage 4 to fit the full ensemble model. 
+
+
+\subsubsection*{Stage 3 code example}
 
 We now create the cross-validations indices with the \texttt{create\_cv()} function for both AOD and CTM linked monitors, and then use the \texttt{grm\_cv()} function to produce out-of-sample $PM_{2.5}$ predictions for all monitor observations, for both the CTM and AOD data.
 
@@ -440,17 +418,38 @@ aod_fit_cv <- grm_cv(
 
 
 
-\subsection*{Stage 4}
+\subsection*{Stage 4: Estimate spatially varying weights}
+
+At this stage we use the \texttt{ensemble\_spatial()} function to fit the ensemble model  $p(y_{st} | M_{CTM}, M_{AOD}) = w_s f_{CTM}(y_{st} | M_{CTM}) + (1-w_s) f_{AOD}(y_{st}|M_{AOD})$, where $w_s$ are spatially varying weights.
+We estimate the weights $w_s$ by fitting the ensemble model $p(y_{st} | M_{CTM}, M_{AOD})$ on the out-of-sample predictions produced during stage 3, $\widehat{f_{CTM}(y_{st} | M_{CTM})}$ and $\widehat{f_{CTM}(y_{st} | M_{CTM})}$, and the original $PM_{2.5}$ data at all times and a monitor locations.
+We place a Gaussian process prior on the weights, $q_s = logit^{-1}(w_s) \sim GP(0, \tau^2_w  \bl{K}(\theta_w, d))$, where $\bl{K}$ is an exponential kernel, and $\tau^2_w$ and $\theta_w$ are the distance and range parameters, respectively.
+Similar to the spatial processes in stage 1, we place an inverse gamma prior on $\tau^2_w$ and a gamma prior on $\theta_w$, such that $\tau^2_w \sim IG(a_{\tau^2_w}, b_{\tau^2_w})$ and $log(\theta_w) \sim Gamma(a_{\theta_w}, b_{\theta_w})$.
+The user can specify the hyperparameters $a_{\tau^2_w}$, $b_{\tau^2_w}$, $a_{\theta_w}$, and $b_{\theta_w}$ using the \texttt{tau.a}, \texttt{tau.b}, \texttt{theta.a}, and \texttt{theta.b} arguments in the \texttt{ensemble\_spatial()} function.
+
+The \texttt{ensemble\_spatial()} function accepts the output from \texttt{grm\_cv()} in stage 3 as input, and outputs the full posterior distribution samples of $q_s$ where $q_s = logit^{-1}(w_s)$. 
+
+\subsubsection*{Stage 4 code example}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=1\textwidth]{../output/figures/stage4.png}
-    \caption{Ensemble model spatially varying weights (D) estimated from the out-of-sample $PM_{2.5}$ mean estimates (B, E) and standard deviationn estimates (C, F) produced in stage 3, compared to the original monitor $PM_{2.5}$ measurements (A).}
+    \caption{Ensemble model $PM_{2.5}$ mean estimates (D) and standard deviation estimates (H) at all locations in study area for July 15th, 2018. We also show the ensemble model spatially varying weights (E) estimated from the out-of-sample CTM-based and AOD-based $PM_{2.5}$ mean estimates (B, C) and standard deviation estimates (F, G) produced in stage 3, the original monitor $PM_{2.5}$ measurements (A).}
     \label{fig:stage4}
 \end{figure}
 
+\begin{table}[ht]
+\centering
+\caption{Model $PM_{2.5}$ prediction performance for ensemble model from stage 4, and CTM-based and AOD-based models from stage 2.}
+\label{tab:modelcomparison}
+\input{../output/figures/pred_obs_full_metrics_table.tex}
+\end{table}
+
+
 At this stage we estimate the spatially varying weights $w_s$ for the ensemble model, using the out-of-sample predictions produced in stage 3, and the original monitor $PM_{2.5}$ measurements.
-We can now compare the out-of-sample predictions produced in stage 3 to the original monitor $PM_{2.5}$ measurements, and the spatially varying weights $w_s$ from the ensemble model \ref{fig:stage4}.
+We compare the out-of-sample predictions produced in stage 3 to these ensemble-based predictions and the original monitor $PM_{2.5}$ measurements, while including the weight estimates for reference (Figure \ref{fig:stage4}).
+If desired, one can additionally use these weight estimates with the \texttt{gap\_fill()} function to produce ensemble-based predictions for each location at which $PM_{2.5}$ is observed, though these outputs are not used in later stages. 
+We do this here to compare the ensemble model performance to the CTM-based and AOD-based models on the times and locations for which both CTM and AOD data are observed, and note that the ensemble model outperforms both the CTM-based and AOD-based models in terms of $R^2$ and RMSE, while maintaining accurate 95\% prediction interval coverage (Table \ref{tab:modelcomparison}).
+Note that \texttt{gap\_fill()} function uses the weight estimates to produce ensemble-based predictions for times and locations at which both CTM and AOD data are observed, and fills in the remaining times and locations with the CTM-based predictions.
 
 \begin{lstlisting}
 
@@ -467,10 +466,22 @@ ensemble_fit <- ensemble_spatial(
     theta.b = 0.05
 )
 
+ensemble_preds_at_observations <- gap_fill(
+    grm.pred.1 = cmaq_fit_cv,
+    grm.pred.2 = aod_fit_cv,
+    weights = ensemble_fit
+)
+
 \end{lstlisting}
 
+\subsection*{Stage 5: Predict weights for all locations}
 
-\subsection*{Stage 5}
+Next we use the \texttt{weight\_pred()} function to spatially interpolate the posterior samples of $w_s$ garnered in stage 4, across all 1km x 1km grid cells in the study area. 
+Specifically $w_{predictions} = logit^{-1}(q_{predictions})$ where $q_{predictions} = \text{krig}(q_s)$, with $q_s$ output from stage 4.
+These weights are used in the final stage to produce ensemble-based $PM_{2.5}$ predictions for all locations in the study area.
+
+
+\subsubsection*{Stage 5}
 
 
 \begin{figure}[ht]
@@ -480,7 +491,7 @@ ensemble_fit <- ensemble_spatial(
     \label{fig:stage56}
 \end{figure}
 
-Next we spatially interpolate the posterior samples of $w_s$ from stage 4 across all locations in the study area using the \texttt{weight\_pred()} function \ref{fig:stage56}.
+Next we spatially interpolate the posterior samples of $w_s$ from stage 4 across all locations in the study area using the \texttt{weight\_pred()} function (Figure \ref{fig:stage56}).
 
 \begin{lstlisting}
 
@@ -493,7 +504,19 @@ weight_preds <- weight_pred(
 
 \end{lstlisting}
 
-\subsection*{Stage 6}
+
+
+\subsection*{Stage 6: Compute ensemble predictions for all locations}
+
+Finally, we input the posterior means and variances for all CTM and AOD data produced in stage 2, and the spatially interpolated weights from stage 5, into the \texttt{gap\_fill()} function, which outputs $PM_{2.5}$ posterior predictive means $\hat{y}_{st}$ and variances $\hat{\sigma}^{2}_{y_{st}}$ for all times $t$ and locations $s$ in the study area. 
+
+For times and locations for which both CTM and AOD are observed, \texttt{gap\_fill()} outputs ensemble-based estimates, where $\hat{y}_{st} = w_s \mu^{CTM}_{st} + (1 - w_s)\mu^{AOD}_{st}$ and $\hat{\sigma}^2_{y_{st}} = w^2_s \sigma^{2, CTM}_{st} + (1 - w_s)^2 \sigma^{2, AOD}_{st}$. 
+For times and locations for which solely CTM is available, \texttt{gap\_fill()} outputs posterior predictive means and variances identical to those produces in stage 2 from $M_{CTM}$. 
+
+
+
+
+\subsubsection*{Stage 6 code example}
 
 Finally, we input the posterior means and variances for all CTM and AOD data produced in stage 2, and the spatially interpolated weights from stage 5, into the \texttt{gap\_fill()} function, which outputs $PM_{2.5}$ posterior predictive means $\hat{y}_{st}$ and variances $\hat{\sigma}^{2}_{y_{st}}$ for all times $t$ and locations $s$ in the study area \ref{fig:stage56}.
 
@@ -506,6 +529,15 @@ results <- gap_fill(grm.pred.1 = cmaq_pred,
                     weights = weight_preds)
 
 \end{lstlisting}
+
+
+
+
+
+
+\section*{Supplementary Information}
+
+
 
 
 
