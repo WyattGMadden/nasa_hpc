@@ -1,5 +1,6 @@
 
 library(ensembleDownscaleR)
+set.seed(42)
 
 # start timer
 start_time <- proc.time()
@@ -95,6 +96,7 @@ cv_id_aod_ord <- create_cv(
     time.id = monitor_pm25_with_aod$time_id,
     type = "ordinary"
 )
+
 
 saveRDS(cv_id_aod_ord, "../output/fit_pred_objects/cv_id_aod_ord.rds")
 cv_id_aod_ord <- readRDS("../output/fit_pred_objects/cv_id_aod_ord.rds")

@@ -45,6 +45,21 @@
 
 \maketitle
 
+\section*{Abstract}
+
+Air pollution has been linked to adverse health outcomes. 
+Ambient fine particulate matter of size less than 2.5 $\mu$m in aerodynamic diameter ($PM_{2.5}$) is a key component of air pollution, and thus is an important target of quantification for better understanding the effects of air pollution on populations. 
+Precise measurements of $PM_{2.5}$ are available through networks of monitors, however these are relatively sparse and thus are of limited use for large-scale health studies. 
+Two secondary data sources are available that are highly correlated with $PM_{2.5}$ and widely available over space and time, and thus can be used to develop statistical models for fine grained $PM_{2.5}$ prediction - Checmical Transport Model (CTM) air quality simulations and satellite-collected Aerosal Optical Depth (AOD) measurements. 
+AOD is precisely correlated with $PM_{2.5}$ but contains observation gaps due to inclement weather conditions or retrieval-error, while CTM is available for all grid squares for a given resolution and spatio-temporal range but may be less correlated with $PM_{2.5}$ due to biases. 
+Furthermore, $PM_{2.5}$ exhibits significant spatial and temporal variability, with sources that include sporadic, localized events like wildfires, as well as more consistent contributors such as motor vehicle exhaust.
+Here we present a suite of statistical software for Bayesian ensemble averaging (available in the R package \texttt{ensembleDownscaleR}) tailored to addressing these challenges in predicting $PM_{2.5}$ at fine spatial and temporal scales using CTM and AOD. 
+We re-introduce the Bayesian ensemble averaging model from \cite{murray2019} while providing additional model specifications and fitting methods.
+We also provide a case study using 2018 data from the Los Angeles metropolitan area with an accompanying tutorial. 
+All code is fully reproducible and available at \url{INCLUDE}, data is made available at \url{INCLUDE}, and the \texttt{ensembleDownscaleR} package is available for download at \url{INCLUDE}.
+
+
+
 \section*{Introduction}
 
 Air pollution exposure is strongly associated with negative health outcomes. 
@@ -214,7 +229,8 @@ Thus the $\lambda$ parameters share the same hyperparameter settings as those fo
 
 \subsubsection*{Stage 1 code example}
 
-We load the \texttt{ensembleDownscaleR} package and fit the Bayesian downscaler regression models for both CTM and AOD data separately, using the previously described Los Angeles $PM_{2.5}$ dataset.
+We load the \texttt{ensembleDownscaleR} package and fit the Bayesian downscaler regression models for CTM using the previously described Los Angeles $PM_{2.5}$ dataset.
+The code for fitting the AOD model is omitted for brevity, but is similar to the CTM model fit and is included in the tutorial code (see INCLUDE).
 
 
 \begin{lstlisting}
@@ -239,24 +255,6 @@ cmaq_fit <- grm(
     verbose.iter = 10
 )
 
-monitor_pm25_with_aod <- readRDS("monitor_pm25_with_aod.rds")
-
-aod_fit <- grm(
-    Y = monitor_pm25_with_aod$pm25,
-    X = monitor_pm25_with_aod$aod,
-    L = monitor_pm25_with_aod[, c("elevation", "population")],
-    M = monitor_pm25_with_aod[, c("cloud", "v_wind", "hpbl", 
-                                   "u_wind", "short_rf", "humidity_2m")],
-    n.iter = 2500,
-    burn = 500,
-    thin = 4,
-    coords = monitor_pm25_with_aod[, c("x", "y")],
-    space.id = monitor_pm25_with_aod$space_id,
-    time.id = monitor_pm25_with_aod$time_id,
-    spacetime.id = monitor_pm25_with_aod$spacetime_id,
-    verbose.iter = 10
-)
-
 \end{lstlisting}
 
 
@@ -278,7 +276,7 @@ We note that \texttt{grm\_pred()} outputs NA values for prediction data with loc
 \end{figure}
 
 Using the fitted downscaler regression models from stage 1, we now can produce full $PM_2.5$ predictions for all locations and times in the study area using the CTM-based fitted model, and for all locations and times for which AOD is available using the AOD-based fitted model \ref{fig:stage2}.
-
+The code for producing AOD predictions is omitted here, but is included in the tutorial code (see INCLUDE).
 
 
 \begin{lstlisting}
@@ -298,23 +296,6 @@ cmaq_pred <- grm_pred(
     n.iter = 500,
     verbose = T
 )
-
-aod_for_predictions <- readRDS("../data/aod_for_predictions.rds")
-
-aod_pred <- grm_pred(
-    grm.fit = aod_fit,
-    X = aod_for_predictions$aod,
-    L = aod_for_predictions[, c("elevation", "population")],
-    M = aod_for_predictions[, c("cloud", "v_wind", "hpbl", 
-                                        "u_wind", "short_rf", "humidity_2m")],
-    coords = aod_for_predictions[, c("x", "y")],
-    space.id = aod_for_predictions$space_id,
-    time.id = aod_for_predictions$time_id,
-    spacetime.id = aod_for_predictions$spacetime_id,
-    n.iter = 500,
-    verbose = T
-)
-
 
 \end{lstlisting}
 
@@ -365,6 +346,7 @@ Specifically, \texttt{grm\_cv()} outputs posterior predictive means $\mu_{st}$ a
 \subsubsection*{Stage 3 code example}
 
 We now create the cross-validations indices with the \texttt{create\_cv()} function for both AOD and CTM linked monitors, and then use the \texttt{grm\_cv()} function to produce out-of-sample $PM_{2.5}$ predictions for all monitor observations, for both the CTM and AOD data.
+The code for producing AOD out-of-sample predictions is omitted here, but is included in the tutorial code (see INCLUDE).
 
 \begin{lstlisting}
 
@@ -388,29 +370,6 @@ cmaq_fit_cv <- grm_cv(
     space.id = monitor_pm25_with_cmaq$space_id,
     time.id = monitor_pm25_with_cmaq$time_id,
     spacetime.id = monitor_pm25_with_cmaq$spacetime_id,
-    verbose.iter = 10
-)
-
-cv_id_aod_ord <- create_cv(
-    space.id = monitor_pm25_with_aod$space_id,
-    time.id = monitor_pm25_with_aod$time_id,
-    type = "ordinary"
-)
-
-aod_fit_cv <- grm_cv(
-    Y = monitor_pm25_with_aod$pm25,
-    X = monitor_pm25_with_aod$aod,
-    cv.object = cv_id_aod_ord,
-    L = monitor_pm25_with_aod[, c("elevation", "population")],
-    M = monitor_pm25_with_aod[, c("cloud", "v_wind", "hpbl", 
-                                   "u_wind", "short_rf", "humidity_2m")],
-    n.iter = 2500,
-    burn = 500,
-    thin = 4,
-    coords = monitor_pm25_with_aod[, c("x", "y")],
-    space.id = monitor_pm25_with_aod$space_id,
-    time.id = monitor_pm25_with_aod$time_id,
-    spacetime.id = monitor_pm25_with_aod$spacetime_id,
     verbose.iter = 10
 )
 
@@ -439,7 +398,10 @@ The \texttt{ensemble\_spatial()} function accepts the output from \texttt{grm\_c
 
 \begin{table}[ht]
 \centering
-\caption{Model $PM_{2.5}$ prediction performance for ensemble model from stage 4, and CTM-based and AOD-based models from stage 2.}
+\caption{
+    Model $PM_{2.5}$ prediction performance for ensemble model from stage 4, and CTM-based and AOD-based models from stage 2, using each cross-validation type available in the \texttt{create\_cv} function. 
+    Namely, we assess model performance using ordinary, spatial, spatial-clustered, and spatial-buffered cross-validation. Each cross-validation formulation contains 10 folds. The spatial-buffered cross-validation is formulated with buffer sizes of 12.6km and 42.6km, corresponding with approximately 0.7 and 0.3 spatial random effect correlation respectively. 
+}
 \label{tab:modelcomparison}
 \input{../output/figures/pred_obs_full_metrics_table.tex}
 \end{table}
@@ -448,7 +410,8 @@ The \texttt{ensemble\_spatial()} function accepts the output from \texttt{grm\_c
 At this stage we estimate the spatially varying weights $w_s$ for the ensemble model, using the out-of-sample predictions produced in stage 3, and the original monitor $PM_{2.5}$ measurements.
 We compare the out-of-sample predictions produced in stage 3 to these ensemble-based predictions and the original monitor $PM_{2.5}$ measurements, while including the weight estimates for reference (Figure \ref{fig:stage4}).
 If desired, one can additionally use these weight estimates with the \texttt{gap\_fill()} function to produce ensemble-based predictions for each location at which $PM_{2.5}$ is observed, though these outputs are not used in later stages. 
-We do this here to compare the ensemble model performance to the CTM-based and AOD-based models on the times and locations for which both CTM and AOD data are observed, and note that the ensemble model outperforms both the CTM-based and AOD-based models in terms of $R^2$ and RMSE, while maintaining accurate 95\% prediction interval coverage (Table \ref{tab:modelcomparison}).
+We do this here to compare the ensemble model performance to the CTM-based and AOD-based models on the times and locations for which both CTM and AOD data are observed, employing ordinary, spatial, spatial-clustered, and spatial-buffered cross-validation for each model (Table \ref{tab:modelcomparison}, see supplementary materials for more details). 
+For all cross-validation formulations, the ensemble model outperforms both the CTM-based and AOD-based models in terms of RMSE and $R^2$, while maintaining accurate 95\% prediction interval coverage (Table \ref{tab:modelcomparison}).
 Note that \texttt{gap\_fill()} function uses the weight estimates to produce ensemble-based predictions for times and locations at which both CTM and AOD data are observed, and fills in the remaining times and locations with the CTM-based predictions.
 
 \begin{lstlisting}

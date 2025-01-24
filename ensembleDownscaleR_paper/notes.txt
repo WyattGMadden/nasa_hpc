@@ -17,3 +17,18 @@ Q's
     - this is actually an issue even for temporal NA padding, because there aren't equal number of pad NA's between aod and cmaq    
         -fixed this 
 
+
+
+meeting 20250124
+- funding next year? statistics post doc goal
+PAPER
+- 
+
+PAPER TODO 
+- add table fitting details (km, cor, etc) to sup info
+- make github page just for remote sensing paper
+    - full code script (run all models, recreate figures/tables, read in data from dataverse)
+- put on CRAN
+
+
+
