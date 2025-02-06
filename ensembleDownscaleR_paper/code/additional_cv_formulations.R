@@ -1,4 +1,3 @@
-
 library(ensembleDownscaleR)
 set.seed(42)
 
@@ -32,37 +31,9 @@ mean_aod <- min(c(mean_theta_alpha_aod, mean_theta_beta_aod))
 mean_cmaq_aod <- min(c(mean_cmaq, mean_aod))
 
 
-seq_dist <- seq(0.1, 1000, 0.1)
 
-#get distance for desired correlation
-matern_kernal <- function(distance, theta, nu) {
-
-    if (!(nu %in% c(0.5, 1.5, 2.5))) {
-        stop("nu must be one of 0.5, 1.5, or 2.5")
-    }
-    
-    root_2_nu_distance_theta <- sqrt(2 * nu) * distance / theta
-
-    if (nu == 0.5) {
-
-        kern <- exp(-root_2_nu_distance_theta)
-
-    } else if (nu == 1.5) {
-
-        kern <- (1 + root_2_nu_distance_theta) * exp(-root_2_nu_distance_theta)
-
-    } else if (nu == 2.5) {
-        
-        kern <- (1 + root_2_nu_distance_theta + root_2_nu_distance_theta^2 / 3) * exp(-root_2_nu_distance_theta)
-
-    }
-
-    return(kern)
-}
-
-
-buffer_7 <- seq_dist[which.min(abs(matern_kernal(seq_dist, mean_cmaq_aod, 0.5) - 0.7))]
-buffer_3 <- seq_dist[which.min(abs(matern_kernal(seq_dist, mean_cmaq_aod, 0.5) - 0.3))]
+buffer_7 <- - mean_cmaq_aod * log(0.7)
+buffer_3 <- - mean_cmaq_aod * log(0.3)
 
 
 cv_id_cmaq_spat <- create_cv(

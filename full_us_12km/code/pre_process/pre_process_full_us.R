@@ -42,7 +42,6 @@ saveRDS(obs, "../../data/created/obs.rds")
 
 
 #process preds
-
 grid.info <- grid.info
 names(grid.info) <- tolower(names(grid.info))
 grid.info <- grid.info[, c("grid_cell", "x", "y")]

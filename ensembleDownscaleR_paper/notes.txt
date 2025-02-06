@@ -20,15 +20,40 @@ Q's
 
 
 meeting 20250124
-- funding next year? statistics post doc goal
+- funding next year? statistics post doc goal. 
+- Can we do 2 aims together, and other related to health or whatever?
+- who to put on comittee?
 PAPER
 - 
 
 PAPER TODO 
+- add data page (based off danlu fire paper) to supp info
 - add table fitting details (km, cor, etc) to sup info
 - make github page just for remote sensing paper
     - full code script (run all models, recreate figures/tables, read in data from dataverse)
 - put on CRAN
+- paragraph on potential next steps
+- need zenodo data documentation info. verify with howard (authors + description)
 
 
 
+
+AIMS NOTES
+
+ensemble
+    -addressing preferential missingness, multi-resolution, etc
+
+
+look into nngp for multi dimension (beyond space and time), 
+    - and do variable selection on dimension? ie collapse some dimenions
+        - previous work is typically nonbayesian? like vechia? 
+    - nngp has strong isotropic component which might not work for large datasets
+        - how to relax this for nngp? fancier deformation
+
+
+meeting 20240125 notes
+Qs
+    - looks like UNC affiliates cannot create dataverses but can contribute? Do we have a dataverse?
+
+- howard is here april 10th, 11th, 14th, 15th
+- 

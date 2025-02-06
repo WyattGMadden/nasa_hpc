@@ -14,8 +14,6 @@ obs$space_id <- as.numeric(as.factor(obs$maiac_id))
 obs$time_id <- as.numeric(as.factor(as.numeric(obs$date)))
 obs$spacetime_id <- 1
 
-str(obs)
-
 
 saveRDS(obs, "../../data/created/obs.rds")
 
