@@ -1,6 +1,5 @@
-
 fit_mat <- function(matern.nu) {
-    obs_full_us <- readRDS("../../data/created/obs.rds")
+    obs_full_us <- readRDS("~/../../projects/hhchang/wmadden/nasa_hpc/full_us_12km/data/created/obs.rds")
     matern.nu <- as.integer(matern.nu) - 0.5
     cat("###################")
     cat("###################")
