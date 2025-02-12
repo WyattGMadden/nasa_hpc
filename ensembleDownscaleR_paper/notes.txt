@@ -57,3 +57,17 @@ Qs
 
 - howard is here april 10th, 11th, 14th, 15th
 - 
+
+
+NNGP 
+
+
+AIM 3
+- get citi certification
+- beyond R2 - (R5, R10)
+- in higher dimension, how do you find the conditional set? 
+    -matthias katzfuss, joe guiness
+- use dimension reduction first and then project to 2d space
+- look at mathius
+- 
+- 
