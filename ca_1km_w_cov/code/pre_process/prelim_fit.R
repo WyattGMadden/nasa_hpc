@@ -1,5 +1,5 @@
 fit_mat <- function(matern.nu) {
-    obs <- readRDS("../../data/created/obs.rds")
+    obs <- readRDS("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/data/created/obs.rds")
     matern.nu <- as.integer(matern.nu) - 0.5
     cat("###################")
     cat("###################")
@@ -48,6 +48,6 @@ fit_mat <- function(matern.nu) {
     cat("")
     cat("")
     saveRDS(temp_fit, 
-            paste0("../../data/created/prelim_fit/prelim_fit_", matern.nu, ".rds"))
+            paste0("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/data/created/prelim_fit/prelim_fit_", matern.nu, ".rds"))
 }
 
