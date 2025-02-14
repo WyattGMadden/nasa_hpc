@@ -1,7 +1,7 @@
 full_fit <- function(matern.nu, cv) {
 
-    obs <- readRDS("../../data/created/obs.rds")
-    cv_object <- readRDS(paste0("../../data/created/cv_objects/", cv, ".rds"))
+    obs <- readRDS("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/data/created/obs.rds")
+    cv_object <- readRDS(paste0("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/data/created/cv_objects/", cv, ".rds"))
 
     n_iter <- 10000
     burn <- 2000
@@ -65,8 +65,8 @@ full_fit <- function(matern.nu, cv) {
 }
 full_cv <- function(matern.nu, cv, fit.i) {
 
-    obs <- readRDS("../../data/created/obs.rds")
-    cv_object <- readRDS(paste0("../../data/created/cv_objects/", cv, ".rds"))
+    obs <- readRDS("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/data/created/obs.rds")
+    cv_object <- readRDS(paste0("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/data/created/cv_objects/", cv, ".rds"))
 
     n_iter <- 10000
     burn <- 2000

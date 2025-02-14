@@ -5,7 +5,7 @@ us_preds <- function() {
     fit <- readRDS(paste0(loc_dir, "output/results/fits/fit_0.5_ordinary.RDS"))$ctm_fit
 
     obs <- readRDS(paste0(loc_dir, "data/created/obs.rds"))
-    pred_dat <- readRDS(paste0(loc_dirk, "data/created/preds.rds"))
+    pred_dat <- readRDS(paste0(loc_dir, "data/created/preds.rds"))
 
     cat("start predictions \n")
 
