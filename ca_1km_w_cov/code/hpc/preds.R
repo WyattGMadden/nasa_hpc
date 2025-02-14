@@ -3,8 +3,8 @@ full_preds <- function() {
     #best rmse matern.nu
     fit <- readRDS("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/output/results/fits/fit_0.5_ordinary.RDS")$ctm_fit
 
-    obs <- readRDS("../../data/created/obs.rds")
-    pred_dat <- readRDS("../../data/created/preds.rds")
+    obs <- readRDS("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/data/created/obs.rds")
+    pred_dat <- readRDS("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/data/created/preds.rds")
     names(pred_dat)
 
 
