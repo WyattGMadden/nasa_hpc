@@ -5,7 +5,6 @@ full_preds <- function() {
 
     obs <- readRDS("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/data/created/obs.rds")
     pred_dat <- readRDS("~/../../projects/hhchang/wmadden/nasa_hpc/ca_1km_w_cov/data/created/preds.rds")
-    names(pred_dat)
 
 
     cat("start predictions \n")
