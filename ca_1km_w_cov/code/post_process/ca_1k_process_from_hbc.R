@@ -7,6 +7,9 @@ save_dir <- "../../output/figures/"
 locs <- read.csv("../../data/howard_uploaded/CA_OR_MAIAC_Grid_wLatLon.csv", check.names = F)
 names(locs) <- c("oid", tolower(names(locs)[2:ncol(locs)]))
 
+length(unique(locs$maiac_id))
+length(unique(obs$maiac_id))
+head(locs |> arrange(maiac_id))
 obs <- readRDS("../../data/created/obs.rds")
 obs <- merge(obs, 
              locs[, c("longitude", "latitude", "maiac_id")],
@@ -74,7 +77,13 @@ cv_out <- lapply(output_cvs,
                cv_type_spec == 'spatial_b' ~ 'Spatial Buffered'),
            cv_type_spec = if_else(cv_type_spec == 'Spatial Buffered',
                                   paste0(cv_type_spec, " (", corr, " Corr)"), 
-                                  cv_type_spec))
+                                  cv_type_spec),
+           cv_type_spec = factor(cv_type_spec, 
+                                    levels = c('Ordinary', 
+                                               'Spatial', 
+                                               'Spatial Clustered', 
+                                               'Spatial Buffered (0.7 Corr)', 
+                                               'Spatial Buffered (0.3 Corr)')))
 
 rm(output_cvs)
 
@@ -129,7 +138,6 @@ cv_out |>
            RMSE = rmse) |>
     pivot_wider(names_from = `Matern Nu Parameter`,
                 values_from = RMSE) |>
-    arrange(`0.5`) |>
     kable() |>
     kableExtra::add_header_above(c(" " = 1, "Mat\\\\'{e}rn $\\\\nu$ Parameter" = 2), 
                                  align = "c", 
@@ -142,7 +150,7 @@ cv_out |>
     mutate(cover = obs > lower_95 & obs < upper_95) |>
     mutate(month = as.numeric(format(date, "%m"))) |>
     group_by(matern_nu, cv_type_spec,  month) |>
-    summarise(rmse = sqrt(mean((estimate - obs)^2))) |>
+    summarise(rmse = round(sqrt(mean((estimate - obs)^2)), 3)) |>
 #              coverage = mean(cover),
 #              mean_sd = mean(sd),
 #              time = unique(time_fit_cv)) |>
@@ -707,8 +715,6 @@ library(tidyverse)
 
 preds_est <- readRDS("../../output/results/preds/preds.RDS")
 
-preds_est2 <- readRDS("../../../full_us_12km/output/results/preds/preds.RDS")
-
 
 preds <- readRDS("../../data/created/preds.rds")
 
@@ -1083,28 +1089,10 @@ y <- obs$pm25
 
 
 
-# Fit elastic net model
-# alpha is the mixing parameter (0 <= alpha <= 1)
-# lambda is the regularization parameter
-#library(glmnet)
-set.seed(123)  
-glm_fit_cv <- glmnet::cv.glmnet(X, y, alpha = 0.5, type.measure = "mse")
-glm_fit <- glmnet::glmnet(X, y, alpha = 0.5, type.measure = "mse")
-best_lambda <- glm_fit_cv$lambda.min
-glmnet_preds <- glmnet:::predict.glmnet(object = glm_fit, 
-                                           newx = X, 
-                                           s = best_lambda)
 tail(glmnet_preds)
 #rmse
 sqrt(mean((glmnet_preds - y)^2))
 
-# Fit Random Forest model
-library(randomForest)
-set.seed(123)
-rf_fit <- randomForest::randomForest(x = X, y = y, ntree = 1000, do.trace = 1)
-rf_preds <- predict(rf_fit, X)
-#rmse
-sqrt(mean((rf_preds - y)^2))
 
 
 #############################################
@@ -1112,12 +1100,15 @@ sqrt(mean((rf_preds - y)^2))
 #############################################
 
 ctm_pred_cv_all <- readRDS("../../output/results/fits/fit_0.5_ordinary.RDS")
+ctm_pred_cv_all$ctm_fit
+ctm_pred_ordinary <- cv_out |>
+    filter(cv_type == "ordinary", matern_nu == 0.5)
+obs_cv <- obs |>
+    left_join(ctm_pred_ordinary[, c("space_id", "time_id", "estimate")],
+              by = c("space_id", "time_id")) |>
+    filter(!is.na(estimate))
 
-obs_cv <- obs[!is.na(ctm_pred_cv$ctm_fit_cv$estimate), ]
-
-ctm_pred_cv <- ctm_pred_cv_all$ctm_fit_cv[!is.na(ctm_pred_cv$ctm_fit_cv$estimate), ]
-
-sqrt(mean((ctm_pred_cv$estimate - ctm_pred_cv$obs)^2))
+ctm_rmse <- sqrt(mean((obs_cv$pm25 - obs_cv$estimate)^2))
 
 
 
@@ -1131,10 +1122,23 @@ X_cv <- as.matrix(obs_cv[, c("elevation", "population",
 y_cv <- obs_cv$pm25
 
 
-# Fit elastic net model cv
-set.seed(123)  # for reproducibility
+################################
+### Fit elastic net model cv ###
+################################
+set.seed(123)  
+
+### one-model glmnet predictions
+glm_fit_cv <- glmnet::cv.glmnet(X_cv, y_cv, alpha = 0.5, type.measure = "mse")
+best_lambda <- glm_fit_cv$lambda.min
+glmnet_preds_cv <- glmnet:::predict.cv.glmnet(object = glm_fit_cv, 
+                                              newx = X_cv, 
+                                              s = best_lambda)
+glmnet_one_model_rmse <- sqrt(mean((glmnet_preds_cv - y_cv)^2))
+
+### glmnet out-of-fold cross-validation predictions 
 glm_folds <- caret::createFolds(y_cv, k = 10, list = TRUE)  # Replace 5 with desired number of folds
 glm_cv_preds <- rep(NA, length(y_cv))
+
 
 for(i in 1:length(glm_folds)) {
   # Split the data
@@ -1145,35 +1149,68 @@ for(i in 1:length(glm_folds)) {
   X_test <- X_cv[test_indices, ]
 
   # Fit the model
-  fit <- glmnet::cv.glmnet(X_train, y_train)
+  fit <- glmnet::cv.glmnet(X_train, y_train, alpha = 0.5)
 
   # Predict on the test set
   predictions <- glmnet:::predict.cv.glmnet(fit, newx = X_test, s = "lambda.min")
 
   # Store the predictions
   glm_cv_preds[test_indices] <- predictions
+  sqrt(mean((glm_cv_preds[test_indices] - y_cv[test_indices])^2)) 
+
+
 }
-sqrt(mean((glm_cv_preds - ctm_pred_cv$obs)^2))
+glmnet_out_of_fold_rmse <- sqrt(mean((glm_cv_preds - y_cv)^2))
 
 
-glm_fit_cv <- glmnet::cv.glmnet(X, y, alpha = 0.5, type.measure = "mse")
-best_lambda <- glm_fit_cv$lambda.min
-glmnet_preds_cv <- glmnet:::predict.cv.glmnet(object = glm_fit_cv, 
-                                              newx = X, 
-                                              s = best_lambda)
+
+###############################
+### Fit Random Forest Model ###
+###############################
+
+# one-model Random Forest model predictions
+library(randomForest)
+set.seed(123)
+rf_fit <- randomForest::randomForest(x = X_cv, y = y_cv, ntree = 1000, do.trace = 1)
+rf_preds <- predict(rf_fit, X_cv)
 #rmse
-sqrt(mean((glmnet_preds_cv - y)^2))
+rmse_one_model_rf <- sqrt(mean((rf_preds - y_cv)^2))
+
+# Out-of-fold Random Forest model cv predictions
+control <- caret::trainControl(
+  method = "cv",
+  number = 10,
+  savePredictions = "final"  # This will save the out-of-sample predictions for each fold
+)
+# rf_model <- caret::train(response ~ ., data = data_combined, method = "rf", trControl = control)
+# saveRDS(rf_model, file = paste0(save_dir, "rf_model_cv.RDS"))
+rf_model <- readRDS(paste0(save_dir, "rf_model_cv.RDS"))
+rf_preds_out_of_fold <- rf_model$pred[order(rf_model$pred$rowIndex), ]
+
+#rmse
+rf_out_of_fold_rmse <- sqrt(mean((rf_preds_out_of_fold$pred - y_cv)^2))
 
 
+head(rf_preds_out_of_fold)
+head(y_cv)
 
+# calculate R^2 for each out-of-fold model
+rf_r2 <- 1 - sum((rf_preds_out_of_fold$pred - y_cv)^2) / sum((y_cv - mean(y_cv))^2)
+glmnet_r2 <- 1 - sum((glm_cv_preds - y_cv)^2) / sum((y_cv - mean(y_cv))^2)
+ctm_r2 <- 1 - sum((obs_cv$estimate - y_cv)^2) / sum((y_cv - mean(y_cv))^2)
 
-# Fit Random Forest model cv
-data_combined <- data.frame(response = y_cv, X_cv)
-control <- caret::trainControl(method = "cv", number = 10)
-rf_model <- caret::train(response ~ ., data = data_combined, method = "rf", trControl = control)
-rf_cv_preds <- rf_model$pred$pred
-
-
+# make rmse table for just out-of-fold predictions, including glmnet, rf, and ctm
+metrics_table <- data.frame(
+  Model = c("GRM", "Elastic Net", "Random Forest"),
+  RMSE = c(ctm_rmse, glmnet_out_of_fold_rmse, rf_out_of_fold_rmse),
+  r2 = c(ctm_r2, glmnet_r2, rf_r2)
+)
+metrics_table |>
+    kable() |>
+#    kableExtra::add_header_above(c(" " = 1, "Mat\\\\'{e}rn $\\\\nu$ Parameter" = 2), 
+#                                 align = "c", 
+#                                 escape = F) |>
+    writeLines(paste0(save_dir, "model_metrics_grm_glm_rf.tex"))
 
 
 

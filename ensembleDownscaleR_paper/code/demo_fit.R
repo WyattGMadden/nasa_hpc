@@ -61,8 +61,9 @@ aod_fit <- readRDS("../output/fit_pred_objects/aod_fit.rds")
 
 
 cv_id_cmaq_ord <- create_cv(
-    space.id = monitor_pm25_with_cmaq$space_id,
     time.id = monitor_pm25_with_cmaq$time_id, 
+    space.id = monitor_pm25_with_cmaq$space_id,
+    spacetime.id = monitor_pm25_with_cmaq$spacetime_id,
     type = "ordinary"
 )
 
@@ -92,8 +93,9 @@ cmaq_fit_cv <- readRDS("../output/fit_pred_objects/cmaq_fit_cv.rds")
 
 
 cv_id_aod_ord <- create_cv(
-    space.id = monitor_pm25_with_aod$space_id,
     time.id = monitor_pm25_with_aod$time_id,
+    space.id = monitor_pm25_with_aod$space_id,
+    spacetime.id = monitor_pm25_with_aod$spacetime_id,
     type = "ordinary"
 )
 

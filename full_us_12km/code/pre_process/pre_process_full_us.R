@@ -39,6 +39,8 @@ obs$spacetime_id <- as.numeric(substr(obs$date, 6, 7))
 
 
 saveRDS(obs, "../../data/created/obs.rds")
+obs <- readRDS("../../data/created/obs.rds")
+obs
 
 
 #process preds

@@ -37,15 +37,17 @@ buffer_3 <- - mean_cmaq_aod * log(0.3)
 
 
 cv_id_cmaq_spat <- create_cv(
-    space.id = monitor_pm25_with_cmaq$space_id,
     time.id = monitor_pm25_with_cmaq$time_id,
+    space.id = monitor_pm25_with_cmaq$space_id,
+    spacetime.id = monitor_pm25_with_cmaq$spacetime_id,
     type = "spatial",
 )
 
 cv_id_aod_spat <- create_cv(
     create.from = cv_id_cmaq_spat,
-    space.id = monitor_pm25_with_aod$space_id,
     time.id = monitor_pm25_with_aod$time_id, 
+    space.id = monitor_pm25_with_aod$space_id,
+    spacetime.id = monitor_pm25_with_aod$spacetime_id
 )
 
 saveRDS(cv_id_cmaq_spat, "../output/additional_cv_fit_objects/cv_id_cmaq_spat.rds")
@@ -54,16 +56,18 @@ saveRDS(cv_id_aod_spat, "../output/additional_cv_fit_objects/cv_id_aod_spat.rds"
 
 
 cv_id_cmaq_spatclust <- create_cv(
-    space.id = monitor_pm25_with_cmaq$space_id,
     time.id = monitor_pm25_with_cmaq$time_id, 
+    space.id = monitor_pm25_with_cmaq$space_id,
+    spacetime.id = monitor_pm25_with_cmaq$spacetime_id,
     type = "spatial_clustered",
     coords = monitor_pm25_with_cmaq[, c("x", "y")],
 )
 
 cv_id_aod_spatclust <- create_cv(
     create.from = cv_id_cmaq_spatclust,
-    space.id = monitor_pm25_with_aod$space_id,
     time.id = monitor_pm25_with_aod$time_id, 
+    space.id = monitor_pm25_with_aod$space_id,
+    spacetime.id = monitor_pm25_with_aod$spacetime_id,
     coords = monitor_pm25_with_aod[, c("x", "y")]
 )
 
@@ -73,8 +77,9 @@ saveRDS(cv_id_aod_spatclust, "../output/additional_cv_fit_objects/cv_id_aod_spat
 
 
 cv_id_cmaq_spatbuff3 <- create_cv(
-    space.id = monitor_pm25_with_cmaq$space_id,
     time.id = monitor_pm25_with_cmaq$time_id, 
+    space.id = monitor_pm25_with_cmaq$space_id,
+    spacetime.id = monitor_pm25_with_cmaq$spacetime_id,
     type = "spatial_buffered",
     coords = monitor_pm25_with_cmaq[, c("x", "y")],
     buffer.size = buffer_3
@@ -82,8 +87,9 @@ cv_id_cmaq_spatbuff3 <- create_cv(
 
 cv_id_aod_spatbuff3 <- create_cv(
     create.from = cv_id_cmaq_spatbuff3,
-    space.id = monitor_pm25_with_aod$space_id,
     time.id = monitor_pm25_with_aod$time_id, 
+    space.id = monitor_pm25_with_aod$space_id,
+    spacetime.id = monitor_pm25_with_aod$spacetime_id,
     coords = monitor_pm25_with_aod[, c("x", "y")]
 )
 saveRDS(cv_id_cmaq_spatbuff3, "../output/additional_cv_fit_objects/cv_id_cmaq_spatbuff3.rds")

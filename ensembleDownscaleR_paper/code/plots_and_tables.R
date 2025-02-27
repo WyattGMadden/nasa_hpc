@@ -510,22 +510,25 @@ ggsave(
 
 
 cv_id_cmaq_ord <- ensembleDownscaleR::create_cv(
-    space.id = monitor_pm25_with_cmaq$space_id,
     time.id = monitor_pm25_with_cmaq$time_id, 
+    space.id = monitor_pm25_with_cmaq$space_id,
+    spacetime.id = monitor_pm25_with_cmaq$spacetime_id,
     type = "ordinary",
     num.folds = 5
 )
 
 cv_id_cmaq_spat <- ensembleDownscaleR::create_cv(
-    space.id = monitor_pm25_with_cmaq$space_id,
     time.id = monitor_pm25_with_cmaq$time_id, 
+    space.id = monitor_pm25_with_cmaq$space_id,
+    spacetime.id = monitor_pm25_with_cmaq$spacetime_id,
     type = "spatial",
     num.folds = 5
 )
 
 cv_id_cmaq_spatclus <- ensembleDownscaleR::create_cv(
-    space.id = monitor_pm25_with_cmaq$space_id,
     time.id = monitor_pm25_with_cmaq$time_id, 
+    space.id = monitor_pm25_with_cmaq$space_id,
+    spacetime.id = monitor_pm25_with_cmaq$spacetime_id,
     type = "spatial_clustered",
     coords = monitor_pm25_with_cmaq[, c("x", "y")],
     num.folds = 5
@@ -533,8 +536,9 @@ cv_id_cmaq_spatclus <- ensembleDownscaleR::create_cv(
 
 
 cv_id_cmaq_spatbuff <- ensembleDownscaleR::create_cv(
-    space.id = monitor_pm25_with_cmaq$space_id,
     time.id = monitor_pm25_with_cmaq$time_id, 
+    space.id = monitor_pm25_with_cmaq$space_id,
+    spacetime.id = monitor_pm25_with_cmaq$spacetime_id,
     type = "spatial_buffered",
     coords = monitor_pm25_with_cmaq[, c("x", "y")],
     buffer.size = 30,

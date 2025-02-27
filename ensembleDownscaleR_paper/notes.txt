@@ -71,3 +71,21 @@ AIM 3
 - look at mathius
 - 
 - 
+
+meeting 20240213
+NNGP paper
+    - mention INLA doesn't work for fine (1km) large-scale 
+vechia aim 
+    - space is highly correlated but might want to predict outside the range as well. 
+    - dimension selection
+        - is range parameter the same across d in vecchia? 
+        - have not seen one where range is different for each exposure 
+        - have they done vecchia with non isotropic covariance?
+    - anisotropic in terms of D and find a subspace
+        - deformations method could find transformation
+        - find smaller subspace do get around overparametrizations
+            - Because we have highly correlated outcomes
+    - n = ~ 100k
+    y = g(X) + \alpha z + \epsilon
+    - continuous birthweight 
+

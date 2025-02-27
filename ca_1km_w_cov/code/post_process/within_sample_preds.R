@@ -1,5 +1,5 @@
 
-output <- readRDS("../../output/results/fit_0.5_ordinary.RDS")
+output <- readRDS("../../output/results/fits/fit_0.5_ordinary.RDS")
 ctm_fit <- output$ctm_fit
 
 obs <- readRDS("../../data/created/obs.rds")
@@ -9,7 +9,6 @@ obs <- readRDS("../../data/created/obs.rds")
 L.pred = as.matrix(obs[, c("elevation", "population")])
 M.pred = as.matrix(obs[, c("cloud", "v_wind", "hpbl", "u_wind", "short_rf", "humidity_2m")])
 
-?grmbayes::grm_pred
 ctm_preds <- grmbayes::grm_pred(grm.fit = ctm_fit,
                                 X.pred = obs$aod.final,
                                 L.pred = L.pred,
@@ -23,5 +22,5 @@ ctm_preds <- grmbayes::grm_pred(grm.fit = ctm_fit,
                                 n.iter = 2000,
                                 verbose = T,
                                 in.sample = TRUE)
-?saveRDS
+
 saveRDS(ctm_preds, "../../output/results/within_sample_preds/preds_0.5_ordinary_within_sample.RDS") 
