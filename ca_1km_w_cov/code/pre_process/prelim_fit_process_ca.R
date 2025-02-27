@@ -99,8 +99,9 @@ for (i in 1:length(cv_types)) {
         bs_print <- paste0("_", bs)
     }
 
-    cv_out <- grmbayes::create_cv(space.id = obs$space_id,
-                                  time.id = obs$time_id,
+    cv_out <- grmbayes::create_cv(time.id = obs$time_id,
+                                  space.id = obs$space_id,
+                                  spacetime.id = obs$spacetime_id,
                                   type = type,
                                   coords = obs[, c("x", "y")],
                                   buffer.size = bs)
