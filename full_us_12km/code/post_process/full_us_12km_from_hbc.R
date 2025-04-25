@@ -33,6 +33,8 @@ obs <- merge(obs,
              by.y = "grid_cell", 
              all.x = TRUE)
 
+buffer_params <- read.csv("../../data/created/buffer_params.csv")
+
 #get distance matrix
 temp <- obs[, c("x", "y")] |> distinct() |> dist()
 
@@ -61,9 +63,12 @@ cv_out <- lapply(output_cvs,
     (\(.) Reduce(rbind, .))() |>
     left_join(unique(obs[, c('time_id', 'space_id', 'x', 'y', 'date')]), 
               by = c('time_id', 'space_id')) |>
-    mutate(buff_size = stringr::str_extract(cv_type, "\\d+"),
-           buff_size = as.integer(buff_size),
-           buff_size = if_else(is.na(buff_size), "", as.character(buff_size)),
+    mutate(buff_size = stringr::str_extract(cv_type, "\\d+(\\.\\d+)?"),
+           buff_size = as.double(buff_size)) |>
+    left_join(buffer_params[, c("corr", "distance")],
+              by = c("buff_size" = "distance")) |>
+    mutate(buff_size = if_else(is.na(buff_size), "", as.character(buff_size)),
+           corr = if_else(is.na(corr), "", as.character(corr)),
            cv_type_spec = substr(cv_type, 1, 9),
            cv_type_spec = case_when(
                cv_type_spec == 'ordinary' ~ 'Ordinary',
@@ -71,7 +76,7 @@ cv_out <- lapply(output_cvs,
                cv_type_spec == 'spatial_c' ~ 'Spatial Clustered',
                cv_type_spec == 'spatial_b' ~ 'Spatial Buffered'),
            cv_type_spec = if_else(cv_type_spec == 'Spatial Buffered',
-                                  paste0(cv_type_spec, " (", buff_size, "km)"), 
+                                  paste0(cv_type_spec, " (", corr, " corr)"), 
                                   cv_type_spec)) 
 
 cv_out <- merge(cv_out, 

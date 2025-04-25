@@ -13,6 +13,15 @@ obs$time_id <- as.numeric(as.factor(as.numeric(obs$date)))
 obs$spacetime_id <- as.numeric(substr(obs$date, 6, 7))
 
 
+
+
+#remove obs if their spacetime + space combo has less than 10 obs
+space_spacetime_key <- paste(obs$space_id, obs$spacetime_id, sep = "-")
+space_spacetime_counts <- table(space_spacetime_key)
+offending_space_spacetime_keys <- space_spacetime_counts[space_spacetime_counts < 10] |>
+    names()
+obs <- obs[!(space_spacetime_key %in% offending_space_spacetime_keys), ]
+
 #remove space ids that don't show up in every spacetime
 unique_space_spacetime_ids <- unique(paste(obs$space_id, obs$spacetime_id, sep = "-"))
 all_possible_ids <- paste(rep(1:max(obs$space_id), times = max(obs$spacetime_id)),
@@ -24,18 +33,10 @@ offending_space_ids <- sub("-.*$", "", not_present)
 obs <- obs[!(obs$space_id %in% as.integer(offending_space_ids)), ]
 
 
-#remove obs if their spacetime + space combo has less than 10 obs
-space_spacetime_key <- paste(obs$space_id, obs$spacetime_id, sep = "-")
-space_spacetime_counts <- table(space_spacetime_key)
-offending_space_spacetime_keys <- space_spacetime_counts[space_spacetime_counts < 10] |>
-    names()
-obs <- obs[!(space_spacetime_key %in% offending_space_spacetime_keys), ]
-
+# remake final time/space/spacetime_ids
 obs$space_id <- as.numeric(as.factor(obs$aqs_site_id))
 obs$time_id <- as.numeric(as.factor(as.numeric(obs$date)))
 obs$spacetime_id <- as.numeric(substr(obs$date, 6, 7))
-
-
 
 
 saveRDS(obs, "../../data/created/obs.rds")

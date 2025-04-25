@@ -9,6 +9,11 @@ start_time <- proc.time()
 
 
 # Stage 1
+n.iter <- 25e3
+burn <- 5e3
+thin <- 20
+
+n.iter.pred <- 1e3
 
 monitor_pm25_with_cmaq <- readRDS("../data/monitor_pm25_with_cmaq.rds")
 
@@ -18,9 +23,9 @@ cmaq_fit <- grm(
     L = monitor_pm25_with_cmaq[, c("elevation", "population")],
     M = monitor_pm25_with_cmaq[, c("cloud", "v_wind", "hpbl", 
                                    "u_wind", "short_rf", "humidity_2m")],
-    n.iter = 2500,
-    burn = 500,
-    thin = 4,
+    n.iter = n.iter,
+    burn = burn,
+    thin = thin,
     covariance = "matern",
     matern.nu = 0.5,
     coords = monitor_pm25_with_cmaq[, c("x", "y")],
@@ -43,9 +48,9 @@ aod_fit <- grm(
     L = monitor_pm25_with_aod[, c("elevation", "population")],
     M = monitor_pm25_with_aod[, c("cloud", "v_wind", "hpbl", 
                                    "u_wind", "short_rf", "humidity_2m")],
-    n.iter = 2500,
-    burn = 500,
-    thin = 4,
+    n.iter = n.iter,
+    burn = burn,
+    thin = thin,
     coords = monitor_pm25_with_aod[, c("x", "y")],
     space.id = monitor_pm25_with_aod$space_id,
     time.id = monitor_pm25_with_aod$time_id,
@@ -78,9 +83,9 @@ cmaq_fit_cv <- grm_cv(
     L = monitor_pm25_with_cmaq[, c("elevation", "population")],
     M = monitor_pm25_with_cmaq[, c("cloud", "v_wind", "hpbl", 
                                    "u_wind", "short_rf", "humidity_2m")],
-    n.iter = 2500,
-    burn = 500,
-    thin = 4,
+    n.iter = n.iter,
+    burn = burn,
+    thin = thin,
     coords = monitor_pm25_with_cmaq[, c("x", "y")],
     space.id = monitor_pm25_with_cmaq$space_id,
     time.id = monitor_pm25_with_cmaq$time_id,
@@ -110,9 +115,9 @@ aod_fit_cv <- grm_cv(
     L = monitor_pm25_with_aod[, c("elevation", "population")],
     M = monitor_pm25_with_aod[, c("cloud", "v_wind", "hpbl", 
                                    "u_wind", "short_rf", "humidity_2m")],
-    n.iter = 2500,
-    burn = 500,
-    thin = 4,
+    n.iter = n.iter,
+    burn = burn,
+    thin = thin,
     coords = monitor_pm25_with_aod[, c("x", "y")],
     space.id = monitor_pm25_with_aod$space_id,
     time.id = monitor_pm25_with_aod$time_id,
@@ -139,7 +144,7 @@ cmaq_pred <- grm_pred(
     space.id = cmaq_for_predictions$space_id,
     time.id = cmaq_for_predictions$time_id,
     spacetime.id = cmaq_for_predictions$spacetime_id,
-    n.iter = 500,
+    n.iter = n.iter.pred,
     verbose = T
 )
 
@@ -161,7 +166,7 @@ aod_pred <- grm_pred(
     space.id = aod_for_predictions$space_id,
     time.id = aod_for_predictions$time_id,
     spacetime.id = aod_for_predictions$spacetime_id,
-    n.iter = 500,
+    n.iter = n.iter.pred,
     verbose = T
 )
 
@@ -174,9 +179,9 @@ aod_pred <- readRDS("../output/fit_pred_objects/aod_pred.rds")
 ensemble_fit <- ensemble_spatial(
     grm.fit.cv.1 = cmaq_fit_cv,
     grm.fit.cv.2 = aod_fit_cv,
-    n.iter = 2500,
-    burn = 500,
-    thin = 4,
+    n.iter = n.iter,
+    burn = burn,
+    thin = thin,
     tau.a = 0.001,
     tau.b = 0.001,
     theta.tune = 0.2,
@@ -226,6 +231,8 @@ results <- readRDS("../output/fit_pred_objects/results.rds")
 # stop timer
 end_time <- proc.time()
 total_runtime <- end_time - start_time
-saveRDS(total_runtime, "../output/fit_pred_objects/runtime.rds")
+total_hours <- ((total_runtime[1] + total_runtime[2]) / 60) / 60
+saveRDS(total_hours, "../output/fit_pred_objects/total_hours.rds")
+total_hours <- readRDS("../output/fit_pred_objects/total_hours.rds")
 
 

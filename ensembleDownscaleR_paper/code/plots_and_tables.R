@@ -95,14 +95,14 @@ data_plt <- ggplot() +
   geom_path(data = square, 
             aes(x = long, y = lat, color = "Study Area", linetype = "Study Area"), 
             linewidth = 1) +
-  geom_text(aes(x = -117.15, y = 34.05, label = "Los Angeles"), 
-            size = 4) +
+#  geom_text(aes(x = -117.15, y = 34.05, label = "Los Angeles"), 
+#            size = 4) +
+#  geom_point(aes(x = -118.25, y = 34.05)) +
   geom_point(data = monitor_pm25_with_cmaq |> 
                distinct(longitude, latitude),
              aes(x = longitude, y = latitude, color = "Monitor Location"), 
              shape = 2,  # Triangle shape
              size = 1) +
-  geom_point(aes(x = -118.25, y = 34.05)) +
   labs(x = "Longitude", 
        y = "Latitude",
        color = NULL) +  # Title for the color and linetype legend
@@ -115,11 +115,12 @@ data_plt <- ggplot() +
         legend.background = element_rect(fill = "white", colour = "black"))
 
 
+scale_factor <- 0.6
 ggsave(
     "../output/figures/studyarea.png", 
     data_plt, 
-    width = 6, 
-    height = 6, 
+    width = 6 * scale_factor,
+    height = 6 * scale_factor,
     dpi = 600
 )
 
@@ -216,11 +217,12 @@ stage2plt <- (cmaqpredplt + cmaqorigplt + aodpredplt + aodorigplt) +
     plot_layout(ncol = 2, byrow = T) +
     plot_annotation(tag_levels = "A")
 
+scale_factor <- 0.6
 ggsave(
     "../output/figures/stage2.png", 
     stage2plt, 
-    width = 12, 
-    height = 12, 
+    width = 11 * scale_factor,
+    height = 12 * scale_factor,
     dpi = 600
 )
 
@@ -288,33 +290,12 @@ stage4cplt <- monitor_pm25_with_aod |>
     theme(legend.position = "bottom",
           legend.direction = "horizontal")
 
-stage4dplt <- monitor_pm25_with_aod |>
-    left_join(ensemble_preds_at_observations,
-              by = c("time_id" = "time.id", 
-                     "space_id" = "space.id", 
-                     "spacetime_id" = "spacetime.id")) |>
-    filter(date == date_use) |>
-    ggplot(aes(x = longitude, y = latitude, colour = ensemble.estimate)) +
-    geom_polygon(data = ca_map, 
-                 aes(x = long, y = lat, group = group),
-                 fill = NA, color = "black") +
-    geom_point(size = size_use) +
-    scale_color_viridis_c() +
-    coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
-                    ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
-    labs(x = "Longitude",
-         y = "Latitude",
-         colour = "PM2.5 Estimate",
-         title = "Ensemble-Based PM2.5 Estimate") +
-    theme(legend.position = "bottom",
-          legend.direction = "horizontal")
-
 ensemble_weights <- 1 / (exp(-ensemble_fit$q[, 2:ncol(ensemble_fit$q)]) + 1)
 ensemble_weights <- apply(ensemble_weights, 1, mean)
 ensemble_fit_post <- data.frame(ensemble_weights = ensemble_weights,
                                 space_id = ensemble_fit$q$space.id)
 
-stage4eplt <- monitor_pm25_with_cmaq |>
+stage4dplt <- monitor_pm25_with_cmaq |>
     left_join(ensemble_fit_post, by = "space_id") |>
     filter(date == date_use) |>
     ggplot(aes(x = longitude, y = latitude, colour = ensemble_weights)) +
@@ -332,80 +313,17 @@ stage4eplt <- monitor_pm25_with_cmaq |>
     theme(legend.position = "bottom",
           legend.direction = "horizontal")
 
-stage4fplt <- monitor_pm25_with_cmaq |>
-    left_join(cmaq_fit_cv,
-              by = c("time_id" = "time.id", 
-                     "space_id" = "space.id", 
-                     "spacetime_id" = "spacetime.id")) |>
-    filter(date == date_use) |>
-    ggplot(aes(x = longitude, y = latitude, colour = sd)) +
-    geom_polygon(data = ca_map, 
-                 aes(x = long, y = lat, group = group),
-                 fill = NA, color = "black") +
-    geom_point(size = size_use) +
-    scale_color_viridis_c() +
-    coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
-                    ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
-    labs(x = "Longitude",
-            y = "Latitude",
-            colour = "PM2.5 Standard Deviation",
-            title = "CMAQ-Based PM2.5 Standard Deviation") +
-    theme(legend.position = "bottom",
-          legend.direction = "horizontal")
 
-
-
-stage4gplt <- monitor_pm25_with_aod |>
-    left_join(aod_fit_cv,
-              by = c("time_id" = "time.id", 
-                     "space_id" = "space.id", 
-                     "spacetime_id" = "spacetime.id")) |>
-    filter(date == date_use) |>
-    ggplot(aes(x = longitude, y = latitude, colour = sd)) +
-    geom_polygon(data = ca_map, 
-                 aes(x = long, y = lat, group = group),
-                 fill = NA, color = "black") +
-    geom_point(size = size_use) +
-    scale_color_viridis_c() +
-    coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
-                    ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
-    labs(x = "Longitude",
-         y = "Latitude",
-         colour = "PM2.5 Standard Deviation",
-         title = "AOD-Based PM2.5 Standard Deviation") +
-    theme(legend.position = "bottom",
-          legend.direction = "horizontal")
-
-stage4hplt <- monitor_pm25_with_aod |>
-    left_join(ensemble_preds_at_observations,
-              by = c("time_id" = "time.id", 
-                     "space_id" = "space.id", 
-                     "spacetime_id" = "spacetime.id")) |>
-    filter(date == date_use) |>
-    ggplot(aes(x = longitude, y = latitude, colour = ensemble.sd)) +
-    geom_polygon(data = ca_map, 
-                 aes(x = long, y = lat, group = group),
-                 fill = NA, color = "black") +
-    geom_point(size = size_use) +
-    scale_color_viridis_c() +
-    coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
-                    ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
-    labs(x = "Longitude",
-         y = "Latitude",
-         colour = "PM2.5 Standard Deviation",
-         title = "Ensemble-Based PM2.5 Standard Deviation") +
-    theme(legend.position = "bottom",
-          legend.direction = "horizontal")
-
-stage4plt <- (stage4aplt + stage4bplt + stage4cplt + stage4dplt + stage4eplt + stage4fplt + stage4gplt + stage4hplt) +
-    plot_layout(ncol = 4, byrow = T) +
+stage4plt <- (stage4aplt + stage4bplt + stage4cplt + stage4dplt) +
+    plot_layout(ncol = 2, byrow = T) +
     plot_annotation(tag_levels = "A")
 
+scale_factor <- 0.6
 ggsave(
     "../output/figures/stage4.png", 
     stage4plt, 
-    width = 18, 
-    height = 11,
+    width = 11 * scale_factor, 
+    height = 12 * scale_factor,
     dpi = 600
 )
 
@@ -434,7 +352,7 @@ s56_cplt <- weights_w_locs |>
     labs(x = "Longitude",
          y = "Latitude",
          colour = "Weight Estimate",
-         title = "Posterior Mean Ensemble Weight") +
+         title = "Ensemble Weight") +
     scale_color_viridis_c() +
     coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
                     ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
@@ -465,7 +383,7 @@ s56_dplt <- full_results |>
     labs(x = "Longitude",
          y = "Latitude",
          color = "PM2.5 Estimate",
-         title = "Ensemble Posterior Predictive Mean") +
+         title = "Ensemble Mean") +
     scale_color_viridis_c() +
     coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
                     ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
@@ -481,8 +399,8 @@ s56_eplt <- full_results |>
     geom_point(size = .0001) +
     labs(x = "Longitude",
          y = "Latitude",
-         color = "PM2.5 Standard Deviation",
-         title = "Ensemble Posterior Predictive Standard Deviation") +
+         color = "PM2.5 SD",
+         title = "Ensemble SD") +
     scale_color_viridis_c() +
     coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
                     ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
@@ -495,11 +413,13 @@ s56plt <- (s56_cplt + s56_dplt + s56_eplt) +
     plot_layout(ncol = 3, byrow = T) +
     plot_annotation(tag_levels = "A")
 
+
+scale_factor <- 0.6
 ggsave(
     "../output/figures/stage56.png", 
     s56plt, 
-    width = 16, 
-    height = 6, 
+    width = 16 * scale_factor,
+    height = 6 * scale_factor,
     dpi = 600
 )
 
@@ -583,21 +503,19 @@ cv_ex_plt <- full_cv |>
     labs(x = "Longitude",
          y = "Latitude",
          color = "CV Assignment")
-    theme(legend.position = "bottom",
-          legend.direction = "horizontal")
-sz_tmp <- 10
+
+scale_factor <- 0.8
 ggsave(
     "../output/figures/cv.png", 
     cv_ex_plt, 
-    width = 11,
-    height = 9,
+    width = 11 * scale_factor,
+    height = 9 * scale_factor,
     dpi = 600
 )
 
 ####################
 ### Results Table###
 ####################
-
 
 pred_obs_full <- ensemble_preds_at_observations |>
     left_join(cmaq_fit_cv[, c("time.id", "space.id", "spacetime.id", "obs","estimate", "sd")],
