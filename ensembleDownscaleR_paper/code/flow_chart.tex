@@ -1,0 +1,196 @@
+% Schema of Labs on a class
+% Author: Cristo J. Alanis
+\documentclass[tikz,border=5pt]{standalone}
+\usepackage{tikz} 
+\usetikzlibrary{calc,shadows,arrows.meta,positioning}
+%%%<
+\usepackage{verbatim}
+\usepackage{tabularx, array}
+\usepackage[active,tightpage]{preview}
+\PreviewEnvironment{tikzpicture}
+\setlength\PreviewBorder{5pt}%
+%%%>
+\begin{comment}
+:Title: Schema of Labs on a class
+:Tags: Shadows;Styles;Backgrounds;Diagrams
+:Author: Cristo J. Alanis
+:Slug: labs-schema
+
+Listado de pr\'acticas
+\end{comment}
+\usetikzlibrary{shadows,arrows}
+% Define the layers to draw the diagram
+\pgfdeclarelayer{background}
+\pgfdeclarelayer{foreground}
+\pgfsetlayers{background,main,foreground}
+ 
+% Define block styles  
+\tikzstyle{materia}=[draw, fill=blue!10, text width=8.0em, align = left,
+  minimum height=1.5em,drop shadow]
+\tikzstyle{practica} = [materia, text width=15em, minimum width=15em,
+  minimum height=3em, rounded corners, drop shadow]
+
+% Uniform vertical spacing for all \practica nodes
+%\tikzset{practica/.append style={node distance=1.8cm}}
+\tikzstyle{texto} = [above, text width=6em, align = left]
+\tikzstyle{linepart} = [draw, thick, color=black!50, -latex', dashed]
+\tikzstyle{line} = [draw, thick, color=black!50, -latex']
+\tikzstyle{ur}=[draw, text centered, minimum height=0.01em]
+ 
+% Define distances for bordering
+\newcommand{\blockdist}{1.3}
+\newcommand{\edgedist}{1.3}
+
+\newcommand{\practica}[3]{%
+  node (p#1) [practica] {%
+    \scriptsize
+    \renewcommand{\arraystretch}{1.3}%
+    \begin{tabularx}{\linewidth}{@{}l>{\raggedright\arraybackslash}X@{}}
+      \textbf{Task:}   & #2 \\
+      \textbf{Output:} & #3
+    \end{tabularx}%
+  }%
+}
+
+% Draw background
+\newcommand{\background}[5]{%
+  \begin{pgfonlayer}{background}
+    % compute the two corners of the box
+    \path (#1.west |- #2.north)+(-1.1,0.7) coordinate (a1);
+    \path (#3.east |- #4.south)+(1.1,-0.7)    coordinate (a2);
+    % draw the dashed background
+    \path[fill=green!15,rounded corners,draw=black!50,dashed]
+      (a1) rectangle (a2);
+    % place the label exactly at the horizontal midpoint,
+    % just 2pt inside the top edge
+    \node[anchor=center,yshift=-9pt] at
+      ($ (a1)!0.5!(a2|-a1) $)
+      {\scriptsize\itshape #5};
+  \end{pgfonlayer}%
+}
+
+\newcommand{\transreceptor}[3]{%
+  \path [linepart] (#1.east) -- node [above]
+    {\scriptsize Transreceptor #2} (#3);}
+
+\begin{document}
+\begin{tikzpicture}[scale=0.7,transform shape]
+ 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%% Draw diagram elements %%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  % Preprocessing
+    \path \practica {0a}{Join CTM and covariates to $PM_{2.5}$ data}{Monitor $PM_{2.5}$ with CTM data};
+  \path (p0a.west)+(10.0,0.0) \practica{0b}{Join AOD and covariates to $PM_{2.5}$ data}{Monitor $PM_{2.5}$ with AOD data};
+  \path (p0a.south)+(0.0,-1.2) \practica{0c}{Join covariates to gridded CTM data}{CTM grid data};
+  \path (p0c.west)+(10.0,0.0) \practica{0d}{Join covariates to gridded AOD data}{AOD grid data};
+
+  % Stage 1
+  \path (p0c.south)+(0,-2.2) \practica{1a}{Fit CTM-based downscaler with \texttt{grm()}}{$M_{CTM}$};
+  \path (p1a.west)+(10.0,0.0) \practica{1b}{Fit AOD-based downscaler with \texttt{grm()}}{$M_{AOD}$};
+
+  % Stage 2
+  \path (p1a.south)+(0,-2.48) \practica{2a}{Predict CTM-based posterior means and variances with \texttt{grm\_pred()} for all grid squares}{$\mu^{CTM}_{st}$, $\sigma^{2,CTM}_{st}$};
+  \path (p2a.west)+(10.0,0.0) \practica{2b}{Predict AOD-based posterior means and variances with \texttt{grm\_pred()} for all grid squares}{$\mu^{AOD}_{st}$, $\sigma^{2,AOD}_{st}$};
+
+  % Stage 3
+  \path (p2a.south)+(0,-2.5) \practica{3a}{Estimate out-of-sample CTM-based posterior means and variances with \texttt{grm\_cv()} for all monitor locations}{$\widehat{f_{CTM}(y_{st} | M_{CTM})}$};
+  \path (p3a.west)+(10.0,0.0) \practica{3b}{Estimate out-of-sample AOD-based posterior means and variances with \texttt{grm\_cv()} for all monitor locations}{$\widehat{f_{AOD}(y_{st} | M_{AOD})}$};
+
+  % Stage 4
+  \coordinate (mid34) at ($(p3a.south)!0.5!(p3b.south)$);
+  \path (mid34)+(0,-2.35) \practica{4a}{Estimate ensemble weights with \texttt{ensemble\_spatial()} for all monitor locations}{$w_s$};
+
+  % Stage 5
+  \path (p4a.south)+(0,-2.5) \practica{5a}{Spatially interpolate ensemble weights with \texttt{weight\_pred()} to all grid squares}{$w_{predictions}$};
+
+  % Stage 6
+  \path (p5a.south)+(0,-2.35) \practica{6a}{Produce ensemble predictios of $PM_{2.5}$ with \texttt{gap\_fill()} for all grid squares}{$\hat{y}_{st}$, $\hat{\sigma}^2_{st}$};
+
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
+  %%% Draw arrows between elements %%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
+
+  %%% connections to stage 1 %%%
+  % preprocessing -> stage 1
+%  \path [line] (p0a.west) -- +(-0.8,0.0) -- +(-0.8,-5.1) -- node [left, midway] {} (p1a);
+  \path[line]
+  (p0a.west)
+    -- +(-0.8,0) 
+    -- +(-0.8,-4) coordinate (corner)
+    % horizontal move into the x-coord of p1a.west, at same y
+    -- (corner |- p1a.west) node[left,midway]{} 
+    % vertical move down/up into the west anchor
+    -- (p1a.west);
+    \path[line]
+      (p0b.east)
+        -- +(0.8,0)
+        -- +(0.8,-4) coordinate (cornerb)
+        -- (cornerb |- p1b.east) node[right,midway] {}
+        -- (p1b.east);
+
+  %%% connections to stage 2 %%%
+  % preprocessing -> stage 2
+    \path[line]
+      (p0c.west)
+        -- +(-0.5,0)
+        -- +(-0.5,-5) coordinate(cornerc)
+        -- (cornerc |- p2a.west) node[left,midway]{} 
+        -- (p2a.west);
+
+    \path[line]
+      (p0d.east)
+        -- +(0.5,0)
+        -- +(0.5,-5) coordinate(cornerd)
+        -- (cornerd |- p2b.east) node[right,midway]{} 
+        -- (p2b.east);
+
+  % stage 1 -> stage 2
+  \path [line] (p1a.south) -- +(0.0,-1.0) -- node [above, midway] {} (p2a);
+  \path [line] (p1b.south) -- +(0.0,-1.0) -- node [above, midway] {} (p2b);
+
+  %%% connections to stage 3 %%%
+  % preprocessing -> stage 3
+  \path[line]
+  (p0a.west)
+    -- +(-0.8,0)
+    -- +(-0.8,-10) coordinate(corner3a)
+    -- (corner3a |- p3a.west) node[left,midway]{}
+    -- (p3a.west);
+  \path[line]
+  (p0b.east)
+    -- +(0.8,0)
+    -- +(0.8,-10) coordinate(corner3b)
+    -- (corner3b |- p3b.east) node[right,midway]{}
+    -- (p3b.east);
+
+  %%% connections to stage 4 %%%
+  % stage 3 -> stage 4
+  \path [line] (p3a.south) -- node [above, midway] {} (p4a);
+  \path [line] (p3b.south) -- node [above, midway] {} (p4a);
+
+  %%% connections to stage 5 %%%
+  % stage 4 -> stage 5
+  \path [line] (p4a.south) -- node [above, midway] {} (p5a);
+
+  %%% connections to stage 6 %%%
+  % stage 5 -> stage 6
+  \path[line] (p2a.south) -- +(-0,-0.4) -- +(-3.55,-0.4) -- +(-3.55,-10) coordinate(corner2a) -- (corner2a |- p6a.west) node[left,midway] {} -- (p6a.west);
+  \path[line] (p2b.south) -- +(-0,-0.4) -- +(3.55,-0.4) -- +(3.55,-10) coordinate(corner2b) -- (corner2b |- p6a.east) node[left,midway] {} -- (p6a.east);
+  \path [line] (p5a.south) -- node [above, midway] {} (p6a);
+
+
+  %%%%%%%%%%%%%%%%%%%%%%%%   
+  %%% Draw Backgrounds %%%
+  %%%%%%%%%%%%%%%%%%%%%%%%   
+  \background{p0a}{p0a}{p0b}{p0c}{Preprocessing}
+  \background{p1a}{p1a}{p1b}{p1b}{Stage 1}
+  \background{p2a}{p2a}{p2b}{p2b}{Stage 2}
+  \background{p3a}{p3a}{p3b}{p3b}{Stage 3}
+  \background{p4a}{p4a}{p4a}{p4a}{Stage 4}
+  \background{p5a}{p5a}{p5a}{p5a}{Stage 5}
+  \background{p6a}{p6a}{p6a}{p6a}{Stage 6}
+\end{tikzpicture}
+\end{document} 
