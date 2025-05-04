@@ -22,7 +22,7 @@ ensemble_fit <- readRDS("../output/fit_pred_objects/ensemble_fit.rds")
 weight_preds <- readRDS("../output/fit_pred_objects/weight_preds.rds")
 results <- readRDS("../output/fit_pred_objects/results.rds")
 ensemble_preds_at_observations <- readRDS("../output/fit_pred_objects/ensemble_preds_at_observations.rds")
-runtime <- readRDS("../output/fit_pred_objects/runtime.rds")
+runtime <- readRDS("../output/fit_pred_objects/total_hours.rds")
 
 # comparison table results
 aod_fit_cv_spat <- readRDS("../output/additional_cv_fit_objects/aod_fit_cv_spat.rds")
@@ -40,7 +40,14 @@ ensemble_preds_at_observations_spatbuff7 <- readRDS("../output/additional_cv_fit
 
 
 
-
+full_cmaq_preds <- cmaq_for_predictions |>
+    left_join(cmaq_pred, by = c("time_id" = "time.id", 
+                                "space_id" = "space.id", 
+                                "spacetime_id" = "spacetime.id"))
+full_aod_preds <- aod_for_predictions |>
+    left_join(aod_pred, by = c("time_id" = "time.id", 
+                                "space_id" = "space.id", 
+                                "spacetime_id" = "spacetime.id"))
 
 
 # Data - study area calculations 
@@ -61,13 +68,34 @@ length(unique(aod_for_predictions$space_id))
 # Data - number of monitors
 length(unique(monitor_pm25_with_cmaq$space_id))
 
-monitor_pm25_with_cmaq |>
+mon_cmaq_miss <- monitor_pm25_with_cmaq |>
     count(space_id, date) |>
-    count(date)
+    count(date) |>
+    pull(n) |>
+    summary()
+(60 - mon_cmaq_miss) / 60
 
-monitor_pm25_with_aod |>
+mon_aod_miss <- monitor_pm25_with_aod |>
     count(space_id, date) |>
-    count(date)
+    count(date) |>
+    pull(n) |>
+    summary()
+(60 - mon_aod_miss) / 60
+
+# Data - Grid cells missingness
+cmaq_for_predictions |>
+    group_by(time_id) |>
+    summarize(n = n()) |>
+    pull(n) |>
+    unique()
+
+aod_miss <- aod_for_predictions |>
+    group_by(time_id) |>
+    summarize(n = n()) |>
+    pull(n) |>
+    summary() 
+
+(length(unique(cmaq_for_predictions$space_id)) - aod_miss) / length(unique(cmaq_for_predictions$space_id))
 
 
 #######################
@@ -92,29 +120,34 @@ data_plt <- ggplot() +
   geom_polygon(data = ca_map, 
                aes(x = long, y = lat, group = group),
                fill = NA, color = "black") +
-  geom_path(data = square, 
-            aes(x = long, y = lat, color = "Study Area", linetype = "Study Area"), 
-            linewidth = 1) +
-#  geom_text(aes(x = -117.15, y = 34.05, label = "Los Angeles"), 
-#            size = 4) +
-#  geom_point(aes(x = -118.25, y = 34.05)) +
-  geom_point(data = monitor_pm25_with_cmaq |> 
-               distinct(longitude, latitude),
-             aes(x = longitude, y = latitude, color = "Monitor Location"), 
-             shape = 2,  # Triangle shape
+  geom_point(data = full_cmaq_preds |> distinct(longitude, latitude),
+             aes(x = longitude, y = latitude, color = "Grid Cell"),
+             shape = 15,
+             size = 0.01) +
+  geom_point(data = monitor_pm25_with_cmaq |> distinct(longitude, latitude),
+             aes(x = longitude, y = latitude, color = "Monitor Location"),
+             shape = 2,
              size = 1) +
   labs(x = "Longitude", 
        y = "Latitude",
-       color = NULL) +  # Title for the color and linetype legend
-  scale_color_manual(values = c("Study Area" = "red", 
-                                "Monitor Location" = "blue2")) +
+       color = NULL) +
+  scale_color_manual(
+    values = c("Grid Cell" = "#FFEB99", 
+               "Monitor Location" = "#7B3294"),
+    guide  = guide_legend(
+      override.aes = list(
+        shape = c(15, 2),
+        size  = c(2, 3)
+      )
+    )
+  ) +
   scale_linetype_manual(guide = "none", values = "dotted") +
-  theme(legend.position = "inside",
-        legend.position.inside = c(0.915, 0.94),  # Adjust these values to move the legend
-        legend.justification.inside = c(0.9, 0.9),  # Anchors the legend at the top right
-        legend.background = element_rect(fill = "white", colour = "black"))
+  theme(legend.position            = "inside",
+        legend.position.inside     = c(0.915, 0.94),
+        legend.justification.inside = c(0.9, 0.9),
+        legend.background          = element_rect(fill = "white", colour = "black"))
 
-
+data_plt
 scale_factor <- 0.6
 ggsave(
     "../output/figures/studyarea.png", 
@@ -125,15 +158,41 @@ ggsave(
 )
 
 
-full_cmaq_preds <- cmaq_for_predictions |>
-    left_join(cmaq_pred, by = c("time_id" = "time.id", 
-                                "space_id" = "space.id", 
-                                "spacetime_id" = "spacetime.id"))
-full_aod_preds <- aod_for_predictions |>
-    left_join(aod_pred, by = c("time_id" = "time.id", 
-                                "space_id" = "space.id", 
-                                "spacetime_id" = "spacetime.id"))
-                                 
+# compute grid resolution
+#data_pltb <- ggplot() +
+#  geom_polygon(data = ca_map,
+#    aes(x = long, y = lat, group = group),
+#    fill = NA, color = "black"
+#  ) +
+#  geom_point(data = full_cmaq_preds |> distinct(longitude, latitude),
+#    aes(x = longitude, y = latitude),
+#    shape = 15,
+#    size = 0.01,
+#  ) +
+#  labs(x = "Longitude", y = "Latitude", color = NULL) +
+#  coord_quickmap(xlim = c(minlon, maxlon), ylim = c(minlat, maxlat),
+#    expand = FALSE
+#  ) +
+#  theme(
+#    legend.position = "inside",
+#    legend.position.inside = c(0.915, 0.94),
+#    legend.justification.inside = c(0.9, 0.9),
+#    legend.background = element_rect(fill = "white", colour = "black")
+#  )
+#
+#
+#data_plt_full <- (data_plt + data_pltb) + 
+#    plot_layout(ncol = 2, byrow = T) +
+#    plot_annotation(tag_levels = "A")
+#                                 
+#scale_factor <- 0.6
+#ggsave(
+#    "../output/figures/studyarea.png", 
+#    data_plt_full, 
+#    width = 6 * scale_factor,
+#    height = 6 * scale_factor,
+#    dpi = 600
+#)
 
 
 ####################
@@ -156,7 +215,7 @@ cmaqpredplt <- full_cmaq_preds |>
     labs(title = "CTM-Based PM2.5 Predictions",
          x = "Longitude",
          y = "Latitude",
-         colour = "PM2.5 Prediction") +
+         colour = "PM2.5 Prediction (µg/m\u00B3)") +
     theme(legend.position = "bottom",
           legend.direction = "horizontal")
 
@@ -170,10 +229,10 @@ cmaqorigplt <- full_cmaq_preds |>
     scale_color_viridis_c() +
     coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
                     ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
-    labs(title = "Observed CTM",
+    labs(title = "CTM PM2.5 Simulations",
          x = "Longitude",
          y = "Latitude",
-         colour = "CTM") +
+         colour = "CTM (µg/m\u00B3)") +
     theme(legend.position = "bottom",
           legend.direction = "horizontal")
 
@@ -191,7 +250,7 @@ aodpredplt <- full_aod_preds |>
     labs(title = "AOD-Based PM2.5 Predictions",
          x = "Longitude",
          y = "Latitude",
-         colour = "PM2.5 Prediction") +
+         colour = "PM2.5 Prediction (µg/m\u00B3)") +
     theme(legend.position = "bottom",
           legend.direction = "horizontal")
 
@@ -243,7 +302,7 @@ stage4aplt <- monitor_pm25_with_cmaq |>
                     ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
     labs(x = "Longitude",
          y = "Latitude",
-         colour = "PM2.5",
+         colour = "PM2.5 (µg/m\u00B3)",
          title = "PM2.5 Monitor Observation") +
     theme(legend.position = "bottom",
           legend.direction = "horizontal")
@@ -264,8 +323,8 @@ stage4bplt <- monitor_pm25_with_cmaq |>
                     ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
     labs(x = "Longitude",
             y = "Latitude",
-            colour = "PM2.5 Prediction",
-            title = "CMAQ-Based PM2.5 Estimate") +
+            colour = "PM2.5 Prediction (µg/m\u00B3)",
+            title = "CTM-Based PM2.5 Estimate") +
     theme(legend.position = "bottom",
           legend.direction = "horizontal")
 
@@ -285,7 +344,7 @@ stage4cplt <- monitor_pm25_with_aod |>
                     ylim = c(minlat - latbuffer, maxlat + latbuffer)) +
     labs(x = "Longitude",
          y = "Latitude",
-         colour = "PM2.5 Estimate",
+         colour = "PM2.5 Estimate (µg/m\u00B3)",
          title = "AOD-Based PM2.5 Estimate") +
     theme(legend.position = "bottom",
           legend.direction = "horizontal")
@@ -382,7 +441,7 @@ s56_dplt <- full_results |>
     geom_point(size = .0001) +
     labs(x = "Longitude",
          y = "Latitude",
-         color = "PM2.5 Estimate",
+         color = "PM2.5 Estimate (µg/m\u00B3)",
          title = "Ensemble Mean") +
     scale_color_viridis_c() +
     coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 
@@ -399,7 +458,7 @@ s56_eplt <- full_results |>
     geom_point(size = .0001) +
     labs(x = "Longitude",
          y = "Latitude",
-         color = "PM2.5 SD",
+         color = "PM2.5 SD (µg/m\u00B3)",
          title = "Ensemble SD") +
     scale_color_viridis_c() +
     coord_cartesian(xlim = c(minlon - lonbuffer, maxlon + lonbuffer), 

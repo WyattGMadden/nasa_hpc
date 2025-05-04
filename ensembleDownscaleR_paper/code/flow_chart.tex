@@ -61,11 +61,9 @@ Listado de pr\'acticas
     % draw the dashed background
     \path[fill=green!15,rounded corners,draw=black!50,dashed]
       (a1) rectangle (a2);
-    % place the label exactly at the horizontal midpoint,
-    % just 2pt inside the top edge
-    \node[anchor=center,yshift=-9pt] at
-      ($ (a1)!0.5!(a2|-a1) $)
-      {\scriptsize\itshape #5};
+    % place the label at the top‐left inside corner
+    \node[texto, anchor=north west, xshift=30pt, yshift=-4pt]
+      at (a1) {\scriptsize\itshape #5};
   \end{pgfonlayer}%
 }
 
@@ -91,8 +89,8 @@ Listado de pr\'acticas
   \path (p1a.west)+(10.0,0.0) \practica{1b}{Fit AOD-based downscaler with \texttt{grm()}}{$M_{AOD}$};
 
   % Stage 2
-  \path (p1a.south)+(0,-2.48) \practica{2a}{Predict CTM-based posterior means and variances with \texttt{grm\_pred()} for all grid squares}{$\mu^{CTM}_{st}$, $\sigma^{2,CTM}_{st}$};
-  \path (p2a.west)+(10.0,0.0) \practica{2b}{Predict AOD-based posterior means and variances with \texttt{grm\_pred()} for all grid squares}{$\mu^{AOD}_{st}$, $\sigma^{2,AOD}_{st}$};
+  \path (p1a.south)+(0,-2.48) \practica{2a}{Predict CTM-based posterior means and variances with \texttt{grm\_pred()} for all grid cells}{$\mu^{CTM}_{st}$, $\sigma^{2,CTM}_{st}$};
+  \path (p2a.west)+(10.0,0.0) \practica{2b}{Predict AOD-based posterior means and variances with \texttt{grm\_pred()} for all grid cells}{$\mu^{AOD}_{st}$, $\sigma^{2,AOD}_{st}$};
 
   % Stage 3
   \path (p2a.south)+(0,-2.5) \practica{3a}{Estimate out-of-sample CTM-based posterior means and variances with \texttt{grm\_cv()} for all monitor locations}{$\widehat{f_{CTM}(y_{st} | M_{CTM})}$};
@@ -103,10 +101,10 @@ Listado de pr\'acticas
   \path (mid34)+(0,-2.35) \practica{4a}{Estimate ensemble weights with \texttt{ensemble\_spatial()} for all monitor locations}{$w_s$};
 
   % Stage 5
-  \path (p4a.south)+(0,-2.5) \practica{5a}{Spatially interpolate ensemble weights with \texttt{weight\_pred()} to all grid squares}{$w_{predictions}$};
+  \path (p4a.south)+(0,-2.5) \practica{5a}{Spatially interpolate ensemble weights with \texttt{weight\_pred()} to all grid cells}{$w_{predictions}$};
 
   % Stage 6
-  \path (p5a.south)+(0,-2.35) \practica{6a}{Produce ensemble predictios of $PM_{2.5}$ with \texttt{gap\_fill()} for all grid squares}{$\hat{y}_{st}$, $\hat{\sigma}^2_{st}$};
+  \path (p5a.south)+(0,-2.35) \practica{6a}{Produce ensemble predictios of $PM_{2.5}$ with \texttt{gap\_fill()} for all grid cells}{$\hat{y}_{st}$, $\hat{\sigma}^2_{st}$};
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
@@ -176,9 +174,10 @@ Listado de pr\'acticas
   \path [line] (p4a.south) -- node [above, midway] {} (p5a);
 
   %%% connections to stage 6 %%%
+  % stage 2 -> stage 6
+  \path[line] (p2a.south) -- +(-0,-0.4) -- +(-3.26,-0.4) -- +(-3.26,-10) coordinate(corner2a) -- (corner2a |- p6a.west) node[left,midway] {} -- (p6a.west);
+  \path[line] (p2b.south) -- +(-0,-0.4) -- +(3.26,-0.4) -- +(3.26,-10) coordinate(corner2b) -- (corner2b |- p6a.east) node[left,midway] {} -- (p6a.east);
   % stage 5 -> stage 6
-  \path[line] (p2a.south) -- +(-0,-0.4) -- +(-3.55,-0.4) -- +(-3.55,-10) coordinate(corner2a) -- (corner2a |- p6a.west) node[left,midway] {} -- (p6a.west);
-  \path[line] (p2b.south) -- +(-0,-0.4) -- +(3.55,-0.4) -- +(3.55,-10) coordinate(corner2b) -- (corner2b |- p6a.east) node[left,midway] {} -- (p6a.east);
   \path [line] (p5a.south) -- node [above, midway] {} (p6a);
 
 
@@ -189,8 +188,8 @@ Listado de pr\'acticas
   \background{p1a}{p1a}{p1b}{p1b}{Stage 1}
   \background{p2a}{p2a}{p2b}{p2b}{Stage 2}
   \background{p3a}{p3a}{p3b}{p3b}{Stage 3}
-  \background{p4a}{p4a}{p4a}{p4a}{Stage 4}
-  \background{p5a}{p5a}{p5a}{p5a}{Stage 5}
-  \background{p6a}{p6a}{p6a}{p6a}{Stage 6}
+  \background{p3a}{p4a}{p3b}{p4a}{Stage 4}
+  \background{p3a}{p5a}{p3b}{p5a}{Stage 5}
+  \background{p3a}{p6a}{p3b}{p6a}{Stage 6}
 \end{tikzpicture}
 \end{document} 
